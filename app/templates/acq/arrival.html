@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block page_title %}图书验收与入库 / Arrival Check{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header-row">
+        <div class="card-title">待验收订单明细 (Incoming Books)</div>
+    </div>
+    
+    <table class="clean-table">
+        <thead>
+            <tr>
+                <th>订单号</th>
+                <th>书名 & ISBN</th>
+                <th>出版社</th>
+                <th>数量</th>
+                <th>订购时间</th>
+                <th style="width: 200px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in orders %}
+            <tr>
+                <td>#{{ item['ORDER_NO'] }}</td>
+                <td>
+                    <div style="font-weight: 500;">{{ item['BOOK_NAME'] }}</div>
+                    <div style="font-size: 12px; color: #888;">{{ item['ISBN'] }}</div>
+                </td>
+                <td>{{ item['PUBLISHER'] }}</td>
+                <td>{{ item['QUANTITY'] }}</td>
+                <td>{{ item['ORDER_DATE'] }}</td>
+                <td>
+                    <div style="display: flex; gap: 8px;">
+                        <form method="POST">
+                            <input type="hidden" name="line_id" value="{{ item['LINE_ID'] }}">
+                            <input type="hidden" name="action" value="accept">
+                            <button type="submit" class="btn-glow" style="padding: 6px 12px; font-size: 12px; background: #10b981; border:none; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);">
+                                <i class="fas fa-check"></i> 验收
+                            </button>
+                        </form>
+                        <form method="POST">
+                            <input type="hidden" name="line_id" value="{{ item['LINE_ID'] }}">
+                            <input type="hidden" name="action" value="return">
+                            <button type="submit" class="btn-glow" style="padding: 6px 12px; font-size: 12px; background: #ef4444; border:none; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);">
+                                <i class="fas fa-times"></i> 退货
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" style="text-align:center; padding:30px;">暂无待验收图书</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block page_title %}订单处理 / Order Processing{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header-row">
+        <div class="card-title">待处理读者荐购 (Pending Suggestions)</div>
+    </div>
+    
+    <form method="POST">
+        <table class="clean-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">选择</th>
+                    <th>图书名称</th>
+                    <th>ISBN</th>
+                    <th>申请人</th>
+                    <th>操作建议</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in pending_list %}
+                <tr>
+                    <td><input type="checkbox" name="selected_ids" value="{{ item['ACQ_ID'] }}"></td>
+                    <td style="font-weight: 500;">{{ item['BOOK_NAME'] }}</td>
+                    <td>{{ item['ISBN'] }}</td>
+                    <td>{{ item['READER_NAME'] }} ({{ item['READER_ID'] }})</td>
+                    <td><span style="color: var(--brand-primary);">待下单</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="text-align:center; padding:30px;">暂无待处理任务</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        {% if pending_list %}
+        <div style="margin-top: 20px; text-align: right;">
+            <button type="submit" class="btn-glow">
+                <i class="fas fa-check-circle"></i> 生成采购订单
+            </button>
+        </div>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}

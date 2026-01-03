@@ -1,0 +1,358 @@
+<!--layout_base.html:本文档是本项目的前端样式模板文件，所有前端界面要保证与本模板的一致性，一定要完全复用、套用本模板已有样式-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NCEPU Library OS - Premium Layout</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            /* 品牌色 */
+            --brand-primary: #2563eb;
+            --brand-glow: rgba(37, 99, 235, 0.1);
+
+            /* 核心：高级玻璃材质参数 */
+            --glass-sidebar-bg: rgba(15, 23, 42, 0.65);
+            --glass-sidebar-border: rgba(255, 255, 255, 0.5);
+
+            /* 阴影 */
+            --shadow-float:
+                0 20px 50px -12px rgba(0, 0, 0, 0.1),
+                0 0 1px rgba(255, 255, 255, 0.1) inset;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+
+        body {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+
+            /* 动态背景 */
+            background:
+                radial-gradient(circle at 10%, rgba(56, 189, 248, 0.4) 0%, transparent 40%),
+                radial-gradient(circle at 90%, rgba(139, 92, 246, 0.4) 0%, transparent 40%),
+                radial-gradient(circle at 50%, rgba(15, 23, 42, 0.8) 0%, rgba(15, 23, 42, 1) 100%),
+                url('../static/asset/BG3.png') no-repeat center/cover;
+            background-blend-mode: overlay;
+        }
+
+        /* 全局容器 */
+        .app-container {
+            width: 96vw;
+            height: 94vh;
+            max-width: 1800px;
+            border-radius: 28px;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.02);
+            box-shadow: var(--shadow-float);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* =========================================
+           1. 左侧：侧边栏 (Sidebar)
+           ========================================= */
+        .sidebar {
+            width: 400px;
+            height: 100%;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            padding: 32px 24px;
+            color: white;
+            background: var(--glass-sidebar-bg);
+            backdrop-filter: blur(30px) saturate(180%) brightness(110%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%) brightness(110%);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar::before {
+            content: ''; position: absolute; inset: 0; z-index: -1; opacity: 0.07;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px);
+            background-size: 20px 20px;
+            mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+        }
+
+        .sidebar::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+        }
+
+        /* [核心修改] Logo 区域调整 */
+        .brand {
+            display: flex;
+            align-items: center;
+            /* 增加一点底部间距，让Logo和菜单分开 */
+            margin-bottom: 50px;
+            /* 稍微向左修正一点padding，因为图片通常自带白边 */
+            padding-left: 5px;
+            height: 60px; /* 固定高度，防止图片撑坏布局 */
+        }
+
+        /* Logo 图片样式 */
+        .brand-logo-img {
+            height: 100%; /* 高度占满容器 */
+            width: auto;  /* 宽度自适应 */
+            max-width: 100%; /* 防止超出侧边栏 */
+            object-fit: contain; /* 保证图片不 deform */
+
+            /* 关键：给图片加一点投影，增加立体感，
+               确保在毛玻璃背景上清晰可见 */
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        /* 导航菜单 */
+        .nav-menu { flex: 1; }
+        .menu-label { font-size: 11px; color: rgba(255,255,255,0.4); margin: 0 10px; font-weight: 600; letter-spacing: 1px; }
+
+        .nav-item {
+            display: flex; align-items: center;
+            padding: 14px 16px; margin-bottom: 6px;
+            border-radius: 14px;
+            color: rgba(255,255,255,0.75);
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; overflow: hidden;
+            font-size: 14px; font-weight: 500;
+        }
+
+        .nav-item i { width: 24px; margin-right: 10px; font-size: 16px; transition: 0.3s; color: rgba(255,255,255,0.6); }
+
+        .nav-item:hover { background: rgba(255, 255, 255, 0.08); color: white; }
+        .nav-item:hover i { transform: scale(1.1); color: #fff; }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(37, 99, 235, 0.3), rgba(37, 99, 235, 0.1));
+            color: white;
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        .nav-item.active::before {
+            content:''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px;
+            background: #60a5fa; border-radius: 0 4px 4px 0;
+            box-shadow: 0 0 10px #60a5fa;
+        }
+        .nav-item.active i { color: #60a5fa; }
+
+        /* =========================================
+           2. 右侧：内容区
+           ========================================= */
+        .main-content {
+            flex: 1;
+            background: rgba(245, 247, 250, 0.92);
+            backdrop-filter: blur(40px);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            border-top-left-radius: 0px;
+        }
+
+        .top-bar {
+            height: 72px; padding: 0 36px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(15px);
+            position: sticky; top: 0; z-index: 50;
+        }
+
+        .search-wrapper { position: relative; width: 320px; }
+        .search-wrapper i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #999; }
+        .search-input {
+            width: 100%; height: 42px; border-radius: 20px; border: 1px solid transparent;
+            background: rgba(0,0,0,0.04); padding-left: 44px; padding-right: 20px;
+            font-size: 14px; transition: all 0.3s;
+        }
+        .search-input:focus { background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-color: var(--brand-primary); }
+
+        .content-scroll { flex: 1; overflow-y: auto; padding: 36px; }
+
+        /* 组件样式 */
+        .card {
+            background: #ffffff; border-radius: 20px; padding: 28px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(0,0,0,0.02); transition: transform 0.3s, box-shadow 0.3s;
+            margin-bottom: 30px;
+        }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 20px 30px -4px rgba(0, 0, 0, 0.08); }
+
+        .card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .card-title { font-size: 18px; font-weight: 700; color: #1e293b; letter-spacing: -0.5px; }
+
+        .btn-glow {
+            background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none;
+            padding: 10px 24px; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35); transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-glow:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(37, 99, 235, 0.5); }
+        .btn-glow:active { transform: scale(0.98); }
+
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 36px; }
+        .stat-item {
+            background: #fff; padding: 24px; border-radius: 18px;
+            display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,1);
+        }
+        .stat-item::before {
+            content: ''; position: absolute; right: -20px; top: -20px; width: 100px; height: 100px;
+            border-radius: 50%; background: linear-gradient(135deg, rgba(59,130,246,0.1), transparent);
+        }
+        .stat-num { font-size: 32px; font-weight: 700; color: #0f172a; margin-top: 12px; line-height: 1; }
+        .stat-label { font-size: 13px; color: #64748b; font-weight: 500; }
+        .stat-icon-wrapper {
+            width: 40px; height: 40px; border-radius: 10px; background: #eff6ff;
+            color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 18px;
+        }
+
+        .clean-table { width: 100%; border-collapse: collapse; }
+        .clean-table th {
+            text-align: left; padding: 16px; color: #94a3b8; font-size: 12px;
+            font-weight: 600; text-transform: uppercase; border-bottom: 1px solid #f1f5f9;
+        }
+        .clean-table td { padding: 20px 16px; border-bottom: 1px solid #f8fafc; color: #334155; font-size: 14px; }
+        .clean-table tr:hover td { background: #f8fafc; }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+
+        <aside class="sidebar">
+            <div class="brand">
+                <img src="../static/asset/NCEPU_LIB.png" alt="华北电力大学图书馆" class="brand-logo-img">
+            </div>
+
+            <nav class="nav-menu">
+                <div class="menu-label">DASHBOARD</div>
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-th-large"></i> <span>工作台 Overview</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-book"></i> <span>图书检索 Books</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-chart-pie"></i> <span>数据统计 Analytics</span>
+                </a>
+
+                <div class="menu-label" style="margin-top: 25px;">MANAGEMENT</div>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-users"></i> <span>读者管理 Readers</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-inbox"></i> <span>借阅请求 Requests</span>
+                    <span style="margin-left:auto; background:rgba(255,255,255,0.2); font-size:10px; padding:2px 6px; border-radius:6px;">3</span>
+                </a>
+            </nav>
+
+            <div style="margin-top: auto; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 16px; display: flex; align-items: center; gap: 12px; backdrop-filter: blur(10px);">
+                <img src="https://ui-avatars.com/api/?name=Admin&background=0ea5e9&color=fff" style="width: 36px; height: 36px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.2);">
+                <div style="flex: 1;">
+                    <div style="font-size: 13px; font-weight: 600;">Administrator</div>
+                    <div style="font-size: 11px; opacity: 0.6;">System Admin</div>
+                </div>
+                <i class="fas fa-cog" style="opacity: 0.7; cursor: pointer;"></i>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div style="font-size: 18px; font-weight: 600; color: #333;">Dashboard</div>
+
+                <div style="display: flex; gap: 24px; align-items: center;">
+                    <div class="search-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="search-input" placeholder="Type to search books, ID...">
+                    </div>
+                    <i class="far fa-bell" style="font-size: 20px; color: #555; cursor: pointer;"></i>
+                </div>
+            </header>
+
+            <div class="content-scroll">
+
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-icon-wrapper"><i class="fas fa-book"></i></div>
+                        <div class="stat-num">12,840</div>
+                        <div class="stat-label">Total Collection</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon-wrapper" style="background:#ecfdf5; color:#10b981;"><i class="fas fa-check"></i></div>
+                        <div class="stat-num">98%</div>
+                        <div class="stat-label">System Status</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon-wrapper" style="background:#fff7ed; color:#f97316;"><i class="fas fa-user-clock"></i></div>
+                        <div class="stat-num">45</div>
+                        <div class="stat-label">Pending Requests</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon-wrapper" style="background:#f3e8ff; color:#a855f7;"><i class="fas fa-comment-dollar"></i></div>
+                        <div class="stat-num">¥ 230</div>
+                        <div class="stat-label">Fine Collected</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-row">
+                        <div class="card-title">Recent Borrowing Activity</div>
+                        <button class="btn-glow">
+                            <i class="fas fa-plus"></i> New Record
+                        </button>
+                    </div>
+
+                    <table class="clean-table">
+                        <thead>
+                            <tr>
+                                <th>Book Name</th>
+                                <th>Borrower</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:12px;">
+                                        <div style="width:32px; height:44px; background:#e2e8f0; border-radius:4px;"></div>
+                                        <span style="font-weight:500;">Algorithms 4th Edition</span>
+                                    </div>
+                                </td>
+                                <td>Zhang San (202101)</td>
+                                <td><span style="color:#10b981; background:#ecfdf5; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600;">Active</span></td>
+                                <td>Oct 24, 2023</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:12px;">
+                                        <div style="width:32px; height:44px; background:#e2e8f0; border-radius:4px;"></div>
+                                        <span style="font-weight:500;">Design Patterns</span>
+                                    </div>
+                                </td>
+                                <td>Li Si (202102)</td>
+                                <td><span style="color:#f59e0b; background:#fffbeb; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600;">Overdue</span></td>
+                                <td>Oct 20, 2023</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>

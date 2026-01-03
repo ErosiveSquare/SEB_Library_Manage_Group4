@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block page_title %}读者荐购 Services{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header-row">
+        <div class="card-title">提交新书荐购 / New Suggestion</div>
+    </div>
+    
+    <form method="POST" style="margin-bottom: 40px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <input type="text" name="book_name" placeholder="图书名称 (必填)" class="search-input" style="background: #f8fafc; border: 1px solid #e2e8f0;" required>
+            <input type="text" name="isbn" placeholder="ISBN (选填)" class="search-input" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+            <input type="text" name="author" placeholder="作者" class="search-input" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+            <input type="text" name="publisher" placeholder="出版社" class="search-input" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+        </div>
+        <button type="submit" class="btn-glow" style="margin-top: 20px;">
+            <i class="fas fa-paper-plane"></i> 提交申请
+        </button>
+    </form>
+
+    <div class="card-title">我的荐购历史</div>
+    <table class="clean-table">
+        <thead>
+            <tr>
+                <th>书名</th>
+                <th>作者</th>
+                <th>状态</th>
+                <th>反馈</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in history %}
+            <tr>
+                <td style="font-weight: 500;">{{ item['BOOK_NAME'] }}</td>
+                <td>{{ item['AUTHOR'] }}</td>
+                <td>
+                    {% if item['STATUS'] == 0 %}
+                    <span style="color:#f59e0b; background:#fffbeb; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600;">处理中</span>
+                    {% elif item['STATUS'] == 1 %}
+                    <span style="color:#10b981; background:#ecfdf5; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600;">已订购</span>
+                    {% else %}
+                    <span style="color:#ef4444; background:#fef2f2; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600;">已驳回</span>
+                    {% endif %}
+                </td>
+                <td>暂无</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="text-align:center; padding: 30px;">暂无记录</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
