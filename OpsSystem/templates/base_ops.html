@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>运维中台 - NCEPU Library</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* 复刻主项目 Light Theme 风格 */
+        :root {
+            --brand-primary: #2563eb;
+            --bg-color: #f1f5f9;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --sidebar-width: 260px; /* 初始宽度 */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* --- 1. 可调整宽度的侧边栏 --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            flex-shrink: 0;
+            min-width: 200px;
+            max-width: 500px;
+        }
+
+        .resizer {
+            width: 5px;
+            height: 100%;
+            background: transparent;
+            position: absolute;
+            right: 0;
+            top: 0;
+            cursor: col-resize;
+            z-index: 100;
+            transition: background 0.2s;
+        }
+        .resizer:hover, .sidebar.resizing .resizer {
+            background: #cbd5e1;
+        }
+
+        .brand {
+            padding: 24px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--brand-primary);
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-menu {
+            padding: 20px 10px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .menu-label {
+            font-size: 11px;
+            color: var(--text-sub);
+            font-weight: 700;
+            padding: 0 12px;
+            margin: 20px 0 8px 0;
+            text-transform: uppercase;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 10px;
+            color: var(--text-sub);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .nav-item:hover {
+            background: #f8fafc;
+            color: var(--brand-primary);
+        }
+        .nav-item.active {
+            background: #eff6ff;
+            color: var(--brand-primary);
+            font-weight: 600;
+        }
+        .nav-item i { width: 24px; }
+
+        /* --- 2. 主内容区 --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .top-bar {
+            height: 64px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            z-index: 10;
+        }
+
+        .content-scroll {
+            flex: 1;
+            overflow: auto;
+            padding: 30px;
+        }
+
+        /* --- 3. 组件样式 (仿主项目) --- */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+        .card-title {
+            font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .btn-glow {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white; border: none; padding: 8px 16px; border-radius: 8px;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+            transition: transform 0.2s; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
+        }
+        .btn-glow:hover { transform: translateY(-1px); }
+        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); }
+        .btn-success { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); }
+        .btn-ghost { background: transparent; color: var(--text-sub); box-shadow: none; border: 1px solid var(--border-color); }
+        .btn-ghost:hover { background: #f8fafc; color: var(--text-main); }
+
+        .clean-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .clean-table th { text-align: left; padding: 12px 16px; color: var(--text-sub); border-bottom: 1px solid var(--border-color); background: #f8fafc; font-weight: 600; }
+        .clean-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+        .clean-table tr:hover td { background: #f8fafc; }
+
+        /* 弹窗样式 (iOS Modal) */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.2); backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center; z-index: 1000;
+        }
+        .modal-box {
+            background: white; width: 500px; max-height: 85vh; border-radius: 20px;
+            box-shadow: var(--shadow-md); display: flex; flex-direction: column; overflow: hidden;
+            animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .modal-header { padding: 16px 24px; border-bottom: 1px solid var(--border-color); font-weight: 600; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
+        .modal-body { padding: 24px; overflow-y: auto; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
+        .form-input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; outline: none; transition: 0.2s; font-size: 14px; }
+        .form-input:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .alert-success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+        .alert-error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar">
+        <div class="brand"><i class="fas fa-tools"></i> 运维中台</div>
+        <div class="nav-menu">
+            <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if request.endpoint == 'dashboard' else '' }}">
+                <i class="fas fa-tachometer-alt"></i> 监控仪表盘
+            </a>
+
+            <div class="menu-label">DATABASES</div>
+            <a href="{{ url_for('db_manager', db_key='library') }}" class="nav-item {{ 'active' if request.view_args.get('db_key') == 'library' else '' }}">
+                <i class="fas fa-book"></i> 业务库 (Library)
+            </a>
+            <a href="{{ url_for('db_manager', db_key='ai') }}" class="nav-item {{ 'active' if request.view_args.get('db_key') == 'ai' else '' }}">
+                <i class="fas fa-brain"></i> AI 记忆 (Memory)
+            </a>
+            <a href="{{ url_for('db_manager', db_key='ops') }}" class="nav-item {{ 'active' if request.view_args.get('db_key') == 'ops' else '' }}">
+                <i class="fas fa-user-shield"></i> 管理员 (Admin)
+            </a>
+
+            <div class="menu-label">SYSTEM</div>
+            <a href="{{ url_for('backup_center') }}" class="nav-item {{ 'active' if request.endpoint == 'backup_center' else '' }}">
+                <i class="fas fa-archive"></i> 备份归档
+            </a>
+        </div>
+        <div style="padding: 20px; border-top: 1px solid var(--border-color);">
+            <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 8px;">Logged in as <b>{{ session.get('ops_user') }}</b></div>
+            <a href="{{ url_for('logout') }}" style="color: #ef4444; text-decoration: none; font-size: 12px; font-weight: 600;">
+                <i class="fas fa-sign-out-alt"></i> 退出登录
+            </a>
+        </div>
+        <div class="resizer" id="dragMe"></div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-bar">
+            <div style="font-size: 18px; font-weight: 700;">{% block page_title %}Dashboard{% endblock %}</div>
+            <div>
+                <span style="font-size: 12px; background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 20px; font-weight: 600;">
+                    System Online
+                </span>
+            </div>
+        </div>
+        <div class="content-scroll">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <i class="fas fa-info-circle"></i> {{ message }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <script>
+        // 侧边栏拖拽逻辑
+        const sidebar = document.getElementById('sidebar');
+        const resizer = document.getElementById('dragMe');
+        let x = 0;
+        let w = 0;
+
+        const mouseDownHandler = function(e) {
+            x = e.clientX;
+            const styles = window.getComputedStyle(sidebar);
+            w = parseInt(styles.width, 10);
+            document.addEventListener('mousemove', mouseMoveHandler);
+            document.addEventListener('mouseup', mouseUpHandler);
+            sidebar.classList.add('resizing');
+            document.body.style.cursor = 'col-resize';
+        };
+
+        const mouseMoveHandler = function(e) {
+            const dx = e.clientX - x;
+            sidebar.style.width = `${w + dx}px`;
+        };
+
+        const mouseUpHandler = function() {
+            document.removeEventListener('mousemove', mouseMoveHandler);
+            document.removeEventListener('mouseup', mouseUpHandler);
+            sidebar.classList.remove('resizing');
+            document.body.style.removeProperty('cursor');
+        };
+
+        resizer.addEventListener('mousedown', mouseDownHandler);
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+    </script>
+</body>
+</html>

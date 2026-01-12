@@ -1,0 +1,92 @@
+{% extends "base_ops.html" %}
+
+{% block page_title %}系统监控 / Dashboard{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+    <div class="card" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none;">
+        <div class="card-title" style="color: white; border-bottom-color: rgba(255,255,255,0.2);">
+            <span><i class="fas fa-key"></i> 今日动态注册密钥 (Daily Key)</span>
+        </div>
+        <div style="text-align: center; padding: 20px 0;">
+            <div style="font-size: 48px; font-weight: 700; font-family: monospace; letter-spacing: 4px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                {{ today_key }}
+            </div>
+            <div style="font-size: 13px; opacity: 0.8; margin-top: 10px;">
+                * 用于新管理员注册验证，每日自动刷新
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">
+            <span><i class="fas fa-server"></i> 运行环境 (Runtime)</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
+                <span style="color: #64748b;">当前用户</span>
+                <span style="font-weight: 600;">{{ session.get('ops_user') }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
+                <span style="color: #64748b;">系统时间</span>
+                <span id="sysTime" style="font-family: monospace;">Loading...</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #64748b;">服务状态</span>
+                <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Running</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">
+        <span><i class="fas fa-database"></i> 数据库连接状态 (Database Status)</span>
+    </div>
+    <table class="clean-table">
+        <thead>
+            <tr>
+                <th>标识 (Key)</th>
+                <th>文件路径 (Path)</th>
+                <th>状态 (Status)</th>
+                <th>大小 (Size)</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for db in db_status %}
+            <tr>
+                <td style="font-weight: 600;">{{ db.name }}</td>
+                <td style="color: #64748b; font-family: monospace; font-size: 12px;">{{ db.path }}</td>
+                <td>
+                    {% if db.exists %}
+                    <span style="color: #10b981;"><i class="fas fa-check-circle"></i> 在线</span>
+                    {% else %}
+                    <span style="color: #ef4444;"><i class="fas fa-times-circle"></i> 丢失</span>
+                    {% endif %}
+                </td>
+                <td>{{ db.size }} KB</td>
+                <td>
+                    {% if db.exists %}
+                    <a href="{{ url_for('db_manager', db_key=db.name|lower) }}" class="btn-glow" style="padding: 4px 10px; font-size: 12px;">
+                        管理数据
+                    </a>
+                    {% else %}
+                    <span style="color: #ccc;">不可用</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function updateTime() {
+        const now = new Date();
+        document.getElementById('sysTime').innerText = now.toLocaleString();
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+</script>
+{% endblock %}

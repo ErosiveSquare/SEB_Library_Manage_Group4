@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>管理员注册</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center;
+            background: #f1f5f9; font-family: -apple-system, sans-serif;
+        }
+        .box {
+            width: 380px; padding: 40px; background: white; border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            text-align: center;
+        }
+        h2 { margin-bottom: 20px; color: #1e293b; font-weight: 700; }
+        .input-group { position: relative; margin-bottom: 16px; }
+        .input-group i { position: absolute; left: 14px; top: 14px; color: #94a3b8; }
+
+        input {
+            width: 100%; padding: 12px 12px 12px 40px;
+            border: 1px solid #e2e8f0; border-radius: 8px; outline: none; background: #f8fafc; box-sizing: border-box;
+            transition: 0.2s;
+        }
+        input:focus { border-color: #10b981; background: white; }
+
+        button {
+            width: 100%; padding: 12px; background: #10b981; color: white; border: none;
+            border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px;
+        }
+        button:hover { background: #059669; }
+
+        .flash { color: #ef4444; font-size: 13px; margin-bottom: 15px; padding: 10px; background: #fef2f2; border-radius: 8px; }
+        .links a { font-size: 13px; color: #64748b; text-decoration: none; margin-top: 20px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div style="font-size: 30px; color: #10b981; margin-bottom: 10px;"><i class="fas fa-user-plus"></i></div>
+        <h2>Create Account</h2>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}<div class="flash">{{ messages[0] }}</div>{% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <div class="input-group">
+                <i class="fas fa-key"></i>
+                <input type="text" name="reg_key" placeholder="今日注册密钥 (Ask Admin)" required style="border-color: #f59e0b; background: #fffbeb;">
+            </div>
+
+            <div class="input-group">
+                <i class="fas fa-user"></i>
+                <input type="text" name="username" placeholder="设置用户名" required>
+            </div>
+
+            <div class="input-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" name="password" placeholder="设置密码" required>
+            </div>
+
+            <div class="input-group">
+                <i class="fas fa-check-circle"></i>
+                <input type="password" name="confirm_password" placeholder="确认密码" required>
+            </div>
+
+            <button type="submit">立即注册</button>
+        </form>
+        <div class="links"><a href="/login">返回登录</a></div>
+    </div>
+</body>
+</html>

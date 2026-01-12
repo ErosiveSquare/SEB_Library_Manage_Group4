@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>运维系统登录</title>
+    <style>
+        body {
+            margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle at top left, #4f46e5, transparent 60%),
+                        radial-gradient(circle at bottom right, #db2777, transparent 60%),
+                        #0f172a;
+            font-family: -apple-system, sans-serif;
+        }
+        .login-box {
+            width: 400px; padding: 40px; border-radius: 24px;
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        h2 { color: white; text-align: center; margin-bottom: 30px; font-weight: 300; }
+        input {
+            width: 100%; padding: 14px; margin-bottom: 20px; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);
+            color: white; outline: none; transition: 0.3s; box-sizing: border-box;
+        }
+        input:focus { border-color: #6366f1; background: rgba(0,0,0,0.4); }
+        button {
+            width: 100%; padding: 14px; border-radius: 12px; border: none;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        button:hover { transform: scale(1.02); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3); }
+        .flash { color: #f87171; text-align: center; font-size: 13px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h2>System O&M</h2>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}<div class="flash">{{ messages[0] }}</div>{% endif %}
+        {% endwith %}
+        <form method="POST">
+            <input type="text" name="username" placeholder="管理员账号" required>
+            <input type="password" name="password" placeholder="安全密钥" required>
+            <button type="submit">进入系统</button>
+        </form>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="{{ url_for('register') }}" style="color: rgba(255,255,255,0.5); text-decoration: none; font-size: 14px; transition: 0.2s;">
+                注册新管理员
+            </a>
+            <style> a:hover { color: white !important; } </style>
+        </div>
+        </div>
+</body>
+</html>

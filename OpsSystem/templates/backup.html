@@ -1,0 +1,69 @@
+{% extends "base_ops.html" %}
+{% block title %}备份与归档 / Backup Center{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">创建新备份</div>
+    <div style="display: flex; gap: 20px; align-items: center;">
+        <form method="POST" style="flex: 1;" onsubmit="showLoading()">
+            <input type="hidden" name="action" value="db">
+            <button type="submit" class="btn btn-success" style="width: 100%; padding: 20px;">
+                <i class="fas fa-database" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
+                仅备份数据库 (SQL/DB)
+            </button>
+        </form>
+
+        <form method="POST" style="flex: 1;" onsubmit="showLoading()">
+            <input type="hidden" name="action" value="full">
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 20px;">
+                <i class="fas fa-file-archive" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
+                全项目源码归档 (ZIP)
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">历史归档记录</div>
+    <table>
+        <thead>
+            <tr>
+                <th>文件名</th>
+                <th>大小 (MB)</th>
+                <th>创建时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for file in files %}
+            <tr>
+                <td><i class="fas {{ 'fa-file-archive' if 'Project' in file.name else 'fa-database' }}" style="color: {{ '#6366f1' if 'Project' in file.name else '#10b981' }}; margin-right: 10px;"></i> {{ file.name }}</td>
+                <td>{{ file.size }}</td>
+                <td>{{ file.time }}</td>
+                <td>
+                    <a href="{{ url_for('dl_backup', filename=file.name) }}" class="btn" style="background: rgba(255,255,255,0.1); padding: 5px 15px; color: #3b82f6;">
+                        <i class="fas fa-download"></i> 下载
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;">暂无备份文件</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function showLoading() {
+        // 简单的防抖反馈，防止用户以为没点上
+        const alerts = document.querySelector('.content-scroll');
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'alert alert-info';
+        loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在执行备份操作，请稍候...';
+        // 插入到最前面
+        if(alerts) {
+            alerts.insertBefore(loadingDiv, alerts.firstChild);
+        }
+    }
+</script>
+{% endblock %}
