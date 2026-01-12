@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NCEPU Library OS{% endblock %}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --brand-primary: #2563eb;
+            --glass-sidebar-bg: rgba(15, 23, 42, 0.65);
+            --glass-sidebar-border: rgba(255, 255, 255, 0.5);
+            --shadow-float: 0 20px 50px -12px rgba(0, 0, 0, 0.1), 0 0 1px rgba(255, 255, 255, 0.1) inset;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+        body {
+            height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+            background: radial-gradient(circle at 10%, rgba(56, 189, 248, 0.4) 0%, transparent 40%),
+                        radial-gradient(circle at 90%, rgba(139, 92, 246, 0.4) 0%, transparent 40%),
+                        radial-gradient(circle at 50%, rgba(15, 23, 42, 0.8) 0%, rgba(15, 23, 42, 1) 100%),
+                        url('../static/asset/BG3.png') no-repeat center/cover;
+            background-blend-mode: overlay;
+        }
+        .app-container { width: 96vw; height: 94vh; max-width: 1800px; border-radius: 28px; display: flex; position: relative; overflow: hidden; background: rgba(255, 255, 255, 0.02); box-shadow: var(--shadow-float); backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .sidebar { width: 400px; height: 100%; position: relative; z-index: 10; display: flex; flex-direction: column; padding: 32px 24px; color: white; background: var(--glass-sidebar-bg); backdrop-filter: blur(30px) saturate(180%) brightness(110%); border-right: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1); }
+        .sidebar::before { content: ''; position: absolute; inset: 0; z-index: -1; opacity: 0.07; background-image: linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px); background-size: 20px 20px; mask-image: linear-gradient(to bottom, black 40%, transparent 100%); }
+        .sidebar::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent); }
+        .brand { display: flex; align-items: center; margin-bottom: 50px; padding-left: 5px; height: 60px; }
+        .brand-logo-img { height: 100%; width: auto; max-width: 100%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+        .nav-menu { flex: 1; }
+        .menu-label { font-size: 11px; color: rgba(255,255,255,0.4); margin: 0 10px; font-weight: 600; letter-spacing: 1px; }
+        .nav-item { display: flex; align-items: center; padding: 14px 16px; margin-bottom: 6px; border-radius: 14px; color: rgba(255,255,255,0.75); text-decoration: none; transition: all 0.3s; position: relative; overflow: hidden; font-size: 14px; font-weight: 500; }
+        .nav-item i { width: 24px; margin-right: 10px; font-size: 16px; transition: 0.3s; color: rgba(255,255,255,0.6); }
+        .nav-item:hover { background: rgba(255, 255, 255, 0.08); color: white; }
+        .nav-item:hover i { transform: scale(1.1); color: #fff; }
+        .nav-item.active { background: linear-gradient(90deg, rgba(37, 99, 235, 0.3), rgba(37, 99, 235, 0.1)); color: white; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 4px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.1); }
+        .nav-item.active::before { content:''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; background: #60a5fa; border-radius: 0 4px 4px 0; box-shadow: 0 0 10px #60a5fa; }
+        .nav-item.active i { color: #60a5fa; }
+        .main-content { flex: 1; background: rgba(245, 247, 250, 0.92); backdrop-filter: blur(40px); position: relative; display: flex; flex-direction: column; border-top-left-radius: 0px; }
+        .top-bar { height: 72px; padding: 0 36px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.04); background: rgba(255,255,255,0.7); backdrop-filter: blur(15px); position: sticky; top: 0; z-index: 50; }
+        .content-scroll { flex: 1; overflow-y: auto; padding: 36px; }
+        .card { background: #ffffff; border-radius: 20px; padding: 28px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.04); border: 1px solid rgba(0,0,0,0.02); margin-bottom: 30px; transition: transform 0.3s, box-shadow 0.3s; }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 20px 30px -4px rgba(0, 0, 0, 0.08); }
+        .card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .card-title { font-size: 18px; font-weight: 700; color: #1e293b; letter-spacing: -0.5px; }
+        .btn-glow { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; padding: 10px 24px; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35); transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-glow:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(37, 99, 235, 0.5); }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 36px; }
+        .stat-item { background: #fff; padding: 24px; border-radius: 18px; display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.02); position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,1); }
+        .stat-item::before { content: ''; position: absolute; right: -20px; top: -20px; width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, rgba(59,130,246,0.1), transparent); }
+        .stat-num { font-size: 32px; font-weight: 700; color: #0f172a; margin-top: 12px; line-height: 1; }
+        .stat-label { font-size: 13px; color: #64748b; font-weight: 500; }
+        .stat-icon-wrapper { width: 40px; height: 40px; border-radius: 10px; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .clean-table { width: 100%; border-collapse: collapse; }
+        .clean-table th { text-align: left; padding: 16px; color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; }
+        .clean-table td { padding: 20px 16px; border-bottom: 1px solid #f8fafc; color: #334155; font-size: 14px; }
+        .clean-table tr:hover td { background: #f8fafc; }
+        .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 12px; }
+        .alert-error { color: #a94442; background-color: #f2dede; border-color: #ebccd1; }
+        .alert-success { color: #3c763d; background-color: #dff0d8; border-color: #d6e9c6; }
+        .alert-warning { color: #8a6d3b; background-color: #fcf8e3; border-color: #faebcc; }
+
+        .ios-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; }
+        .ios-modal-overlay.open { display: flex; opacity: 1; }
+        .ios-modal { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.5) inset; width: 500px; max-width: 90vw; transform: scale(0.95) translateY(10px); transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden; display: flex; flex-direction: column; max-height: 80vh; }
+        .ios-modal-overlay.open .ios-modal { transform: scale(1) translateY(0); }
+        .ios-modal-header { padding: 16px 24px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.5); }
+        .ios-modal-title { font-size: 17px; font-weight: 600; color: #1d1d1f; }
+        .ios-modal-close { cursor: pointer; color: #86868b; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.05); border-radius: 50%; }
+        .ios-modal-body { padding: 0; overflow-y: auto; flex: 1; }
+        .notice-list { list-style: none; }
+        .notice-item { padding: 16px 24px; border-bottom: 1px solid rgba(0,0,0,0.05); transition: background 0.2s; cursor: default; }
+        .notice-item:hover { background: rgba(255,255,255,0.6); }
+        .notice-msg { background: #eff6ff; border-left: 4px solid #3b82f6; }
+        .notice-top-tag, .msg-tag { display: inline-block; padding: 2px 6px; color: white; font-size: 10px; border-radius: 4px; font-weight: 600; margin-right: 6px; vertical-align: middle; }
+        .notice-top-tag { background: #ef4444; } .msg-tag { background: #3b82f6; }
+        .notice-title { font-size: 15px; font-weight: 600; color: #1d1d1f; margin-bottom: 4px; }
+        .notice-meta { font-size: 12px; color: #86868b; display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .notice-content { font-size: 14px; color: #4b5563; line-height: 1.5; white-space: pre-wrap; }
+        .ios-form-group { padding: 24px; }
+
+
+        .ios-btn-primary { width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; transition: background 0.2s; }
+        .ios-btn-primary:hover { background: #0062cc; }
+        .notification-wrapper { position: relative; display: flex; align-items: center; margin-left: 15px; }
+        .bell-icon-btn { position: relative; padding: 8px; cursor: pointer; transition: transform 0.2s; }
+        .bell-icon-btn:hover { transform: scale(1.1); }
+        .notification-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; border: 2px solid #fff; display: none; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4); animation: pulseDot 2s infinite; }
+        @keyframes pulseDot { 0% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);} 70% {box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);} 100% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);} }
+        .btn-icon-soft { width: 36px; height: 36px; border-radius: 50%; border: none; background: #f1f5f9; color: #64748b; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; margin-right: 12px; }
+        .btn-icon-soft:hover { background: #e2e8f0; color: #3b82f6; transform: translateY(-1px); }
+        .ai-float-btn { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4); display: flex; align-items: center; justify-content: center; color: white; font-size: 26px; cursor: pointer; z-index: 9999; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .ai-float-btn:hover { transform: scale(1.1) rotate(10deg); }
+        .ai-chat-window { position: fixed; bottom: 100px; right: 30px; width: 650px; height: 750px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: none; flex-direction: column; z-index: 9999; overflow: hidden; opacity: 0; transform: translateY(20px); transition: all 0.3s ease; }
+        .ai-chat-window.active { display: flex; opacity: 1; transform: translateY(0); }
+        .ai-header { padding: 16px 20px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .ai-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #f8fafc; }
+        .msg-bubble { max-width: 85%; padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
+        .msg-user { align-self: flex-end; background: #6366f1; color: white; border-bottom-right-radius: 2px; }
+        .msg-ai { align-self: flex-start; background: white; color: #334155; border: 1px solid #e2e8f0; border-bottom-left-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .ai-input-area { padding: 15px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; }
+        .ai-input { flex: 1; border: 1px solid #e2e8f0; border-radius: 20px; padding: 10px 15px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        .ai-input:focus { border-color: #6366f1; }
+        .ai-send-btn { background: #6366f1; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .ai-send-btn:hover { background: #4f46e5; }
+
+        /* 左下角用户信息条样式 */
+        .sidebar-footer {
+            margin-top: auto; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 16px;
+            backdrop-filter: blur(10px); transition: background 0.2s;
+            display: flex; align-items: center; gap: 12px; /* 关键：Flex布局 */
+        }
+        .sidebar-footer:hover { background: rgba(0,0,0,0.3); }
+        .user-profile-link {
+            text-decoration: none; color: inherit; display: flex; align-items: center; gap: 12px; flex: 1; overflow: hidden;
+            cursor: pointer;
+        }
+
+
+        /* ========================================= */
+    /* [新增] iOS 全局高级输入框样式 (Global Inputs) */
+    /* ========================================= */
+
+    /* 1. 核心样式：覆盖所有文本类输入控件 */
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="date"],
+    input[type="datetime-local"],
+    input[type="search"],
+    select,
+    textarea,
+    .form-control,
+    .ios-input,    /* 兼容旧类名 */
+    .search-input  /* 兼容旧类名 */
+    {
+        width: 100%;
+        padding: 12px 16px;           /* 舒适的内边距，手指触控友好 */
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #1d1d1f;               /* Apple 深灰文字 */
+
+        /* 磨砂玻璃质感背景 */
+        background-color: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+
+        /* 边框与圆角 */
+        border: 1px solid #d2d2d7;    /* 细腻的灰色边框 */
+        border-radius: 12px;          /* iOS 标准大圆角 */
+
+        /* 消除默认样式 */
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+
+        /* 平滑过渡动画 */
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02); /* 极微弱的立体感 */
+        margin-bottom: 15px; /* 统一间距 */
+    }
+
+    /* 2. 悬停状态 (Hover) */
+    input:hover, select:hover, textarea:hover {
+        background-color: #ffffff;    /* 悬停时变纯白 */
+        border-color: #86868b;        /* 边框轻微加深 */
+    }
+
+    /* 3. 聚焦状态 (Focus) - 核心交互体验 */
+    input:focus, select:focus, textarea:focus {
+        background-color: #ffffff;
+        border-color: #007aff;        /* iOS 官方蓝 */
+        /* 蓝色柔光扩散光晕 */
+        box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
+        transform: translateY(-1px);  /* 极微小的上浮反馈 */
+    }
+
+    /* 4. 占位符 (Placeholder) */
+    ::placeholder {
+        color: #86868b;
+        opacity: 0.8;
+        font-weight: 400;
+    }
+
+    /* 5. 下拉菜单 (Select) 专属美化 */
+    select {
+        /* 自定义 SVG 箭头，替换浏览器默认丑图标 */
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 24 24' stroke='%2386868b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        background-size: 14px;
+        padding-right: 40px; /* 给箭头留出空间 */
+        cursor: pointer;
+    }
+
+    /* 6. 文本域 (Textarea) 调整 */
+    textarea {
+        min-height: 100px;
+        resize: vertical; /* 仅允许垂直拉伸 */
+    }
+
+    /* 7. 特殊场景修正：表格内的输入框 (如订单修改数量) */
+    table input, .clean-table input {
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        margin-bottom: 0;
+        background-color: #fff;
+        border-color: #e5e5ea;
+        box-shadow: none;
+    }
+    table input:focus {
+        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<div class="ai-float-btn" onclick="toggleChat()" title="AI 智能助手">
+    <i class="fas fa-robot"></i>
+</div>
+
+<div class="ai-chat-window" id="aiWindow">
+    <div class="ai-header" style="padding:16px 20px; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; font-weight:600; display:flex; justify-content:space-between; align-items:center;">
+        <span><i class="fas fa-sparkles"></i> AI助手</span><i class="fas fa-times" style="cursor:pointer;" onclick="toggleChat()"></i>
+    </div>
+    <div class="ai-messages" id="aiMessages" style="flex:1; padding:20px; overflow-y:auto; background:#f8fafc;"></div>
+    <div class="ai-input-area" style="padding:15px; background:white; display:flex; gap:10px;">
+        <input type="text" id="aiInput" style="flex:1; border:1px solid #e2e8f0; border-radius:20px; padding:10px 15px; outline:none;" placeholder="Ask me...">
+        <button onclick="sendMessage()" style="background:#6366f1; color:white; border:none; width:40px; height:40px; border-radius:50%; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
+    </div>
+</div>
+
+<div class="ios-modal-overlay" id="noticePublishModal"><div class="ios-modal"><div class="ios-modal-header"><div class="ios-modal-title">公告</div><div class="ios-modal-close" onclick="closeModal('noticePublishModal')"><i class="fas fa-times"></i></div></div><div class="ios-modal-body"><div class="ios-form-group"><input id="noticeTitle" class="ios-input" placeholder="标题"><textarea id="noticeContent" class="ios-input" rows="4" placeholder="内容"></textarea><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><input type="checkbox" id="noticeTop"><label>置顶</label></div><button class="ios-btn-primary" onclick="submitNotice()">发布</button></div></div></div></div>
+<div class="ios-modal-overlay" id="messageModal"><div class="ios-modal"><div class="ios-modal-header"><div class="ios-modal-title">留言</div><div class="ios-modal-close" onclick="closeModal('messageModal')"><i class="fas fa-times"></i></div></div><div class="ios-modal-body"><div class="ios-form-group"><textarea id="messageContent" class="ios-input" rows="4"></textarea><button class="ios-btn-primary" onclick="submitMessage()">发送</button></div></div></div></div>
+<div class="ios-modal-overlay" id="noticeListModal"><div class="ios-modal"><div class="ios-modal-header"><div class="ios-modal-title">通知公告</div><div class="ios-modal-close" onclick="closeModal('noticeListModal')"><i class="fas fa-times"></i></div></div><div class="ios-modal-body"><ul id="noticeUl" style="list-style:none;"></ul></div></div></div>
+
+
+<script>
+    // 更新 submitNotice 函数以包含 include_overdue 参数
+    async function submitNotice() {
+        const title = document.getElementById('noticeTitle').value;
+        const content = document.getElementById('noticeContent').value;
+        const isTop = document.getElementById('noticeTop').checked;
+        const includeOverdue = document.getElementById('noticeOverdue').checked; // 获取选中状态
+
+        if(!title) return alert('标题不能为空'); // content 可以为空，因为可能只发报表
+
+        await fetch("{{ url_for('notice.publish') }}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({title, content, is_top: isTop, include_overdue: includeOverdue})
+        });
+        alert('已成功发布!');
+        closeModal('noticePublishModal');
+        // 清空表单
+        document.getElementById('noticeTitle').value = '';
+        document.getElementById('noticeContent').value = '';
+        document.getElementById('noticeTop').checked = false;
+        document.getElementById('noticeOverdue').checked = false;
+    }
+
+
+    function openModal(id) { document.getElementById(id).classList.add('open'); if(id === 'noticeListModal') fetchNotices(); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    let isChatOpen = false, isHistoryLoaded = false;
+    function toggleChat() { const win = document.getElementById('aiWindow'); isChatOpen = !isChatOpen; if (isChatOpen) { win.classList.add('active'); if (!isHistoryLoaded) { loadHistory(); isHistoryLoaded=true; } } else { win.classList.remove('active'); } }
+    async function loadHistory() { try { const res = await fetch("{{ url_for('ai.history') }}"); const data = await res.json(); if(data.history) { const c = document.getElementById('aiMessages'); c.innerHTML=''; data.history.forEach(m => appendMessage(m.role, m.content)); } } catch(e){} }
+    function appendMessage(role, content) { const c = document.getElementById('aiMessages'); const d = document.createElement('div'); d.className = `msg-bubble ${role==='user'?'msg-user':'msg-ai'}`; d.innerHTML = content.replace(/\n/g, '<br>'); c.appendChild(d); c.scrollTop = c.scrollHeight; }
+    function handleEnter(e) { if(e.key==='Enter') sendMessage(); }
+    async function sendMessage() { const inp = document.getElementById('aiInput'); const text = inp.value.trim(); if(!text) return; appendMessage('user', text); inp.value = ''; try { const res = await fetch("{{ url_for('ai.ask') }}", {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:text})}); const data = await res.json(); appendMessage('assistant', data.reply); } catch(e) { appendMessage('assistant', 'Error connecting to AI.'); } }
+
+    async function fetchNotices() {
+        const ul = document.getElementById('noticeUl'); ul.innerHTML = '<li style="padding:20px; text-align:center;"><i class="fas fa-spinner fa-spin"></i> 加载中...</li>';
+        try {
+            const res = await fetch("{{ url_for('notice.get_latest') }}");
+            const data = await res.json();
+            ul.innerHTML = '';
+            if(data.notices && data.notices.length > 0) {
+                data.notices.forEach(n => {
+                    const li = document.createElement('li');
+                    li.className = `notice-item ${n.type === 'message' ? 'notice-msg' : ''}`;
+                    let tagHtml = '';
+                    if(n.is_top) tagHtml += '<span class="notice-top-tag">置顶</span>';
+                    if(n.type === 'message') tagHtml += '<span class="msg-tag">留言</span>';
+                    li.innerHTML = `<div class="notice-title">${tagHtml}${n.title}</div><div class="notice-meta"><span>${n.publisher}</span><span>${n.date}</span></div><div class="notice-content">${n.content}</div>${n.type === 'message' && !n.is_read ? `<div style="text-align:right; margin-top:5px;"><button onclick="markRead(${n.id}, this)" style="font-size:11px; padding:2px 8px; border:1px solid #ccc; background:white; border-radius:4px; cursor:pointer;">标记已读</button></div>` : ''}`;
+                    ul.appendChild(li);
+                });
+                localStorage.setItem('last_notice_read_time', Date.now()); document.getElementById('noticeDot').style.display = 'none';
+            } else { ul.innerHTML = '<li style="padding:20px; text-align:center;">暂无通知</li>'; }
+        } catch(e) { ul.innerHTML = '<li>加载通知失败</li>'; }
+    }
+
+    async function submitNotice() { const title = document.getElementById('noticeTitle').value; const content = document.getElementById('noticeContent').value; const isTop = document.getElementById('noticeTop').checked; if(!title || !content) return alert('内容不能为空'); await fetch("{{ url_for('notice.publish') }}", {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title, content, is_top:isTop})}); alert('已成功发布!'); closeModal('noticePublishModal'); }
+    async function submitMessage() { const content = document.getElementById('messageContent').value; if(!content) return alert('内容不能为空'); await fetch("{{ url_for('notice.leave_message') }}", {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({content})}); alert('留言已发送!'); document.getElementById('messageContent').value=''; closeModal('messageModal'); }
+    async function markRead(msgId, btn) { await fetch("{{ url_for('notice.read_message') }}", {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({msg_id:msgId})}); btn.parentElement.parentElement.style.opacity = '0.5'; btn.innerHTML = '已读'; }
+
+    window.addEventListener('load', async () => {
+        {% if session.get('user_id') %}
+        try { const res = await fetch("{{ url_for('notice.get_latest') }}"); const data = await res.json(); if(data.notices && data.notices.length > 0) { const latestTime = new Date(data.notices[0].date).getTime(); const lastRead = localStorage.getItem('last_notice_read_time') || 0; if(latestTime > lastRead) document.getElementById('noticeDot').style.display = 'block'; } } catch(e){}
+        {% endif %}
+    });
+</script>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="brand"><img src="{{ url_for('static', filename='asset/NCEPU_LIB.png') }}" alt="华北电力大学图书馆" class="brand-logo-img"></div>
+            <nav class="nav-menu">
+                {% if 'access_dashboard' in session.get('permissions', []) or 'root_access' in session.get('permissions', []) %}
+                <div class="menu-label">DASHBOARD</div>
+                <a href="{{ url_for('main.dashboard') }}" class="nav-item {% if request.endpoint == 'main.dashboard' %}active{% endif %}"><i class="fas fa-landmark"></i> <span>图书馆首页 Home</span></a>
+                <a href="{{ url_for('main.search') }}" class="nav-item {% if request.endpoint == 'main.search' %}active{% endif %}"><i class="fas fa-book"></i> <span>图书检索 Books</span></a>
+                <a href="{{ url_for('main.library_map') }}" class="nav-item {% if request.endpoint == 'main.library_map' %}active{% endif %}"><i class="fas fa-map"></i> <span>馆藏地图 Map</span></a>
+                {% endif %}
+
+                {% if 'access_services' in session.get('permissions', []) or 'root_access' in session.get('permissions', []) %}
+                <div class="menu-label" style="margin-top: 25px;">SERVICES</div>
+                <a href="{{ url_for('acq.suggestion') }}" class="nav-item {% if request.endpoint == 'acq.suggestion' %}active{% endif %}"><i class="fas fa-pen-fancy"></i> <span>读者荐购 Suggest</span></a>
+                <a href="{{ url_for('circ.history') }}" class="nav-item {% if request.endpoint == 'circ.history' %}active{% endif %}"><i class="fas fa-history"></i> <span>借阅记录 History</span></a>
+                {% endif %}
+
+                {% if 'manage_acq_order' in session.get('permissions', []) or 'manage_acq_arrival' in session.get('permissions', []) or 'manage_circulation' in session.get('permissions', []) or 'manage_users' in session.get('permissions', []) or 'root_access' in session.get('permissions', []) %}
+                    <div class="menu-label" style="margin-top: 25px;">MANAGEMENT</div>
+
+                    {% if 'manage_acq_order' in session.get('permissions', []) or 'root_access' in session.get('permissions', []) %}
+                    <a href="{{ url_for('acq.order_process') }}" class="nav-item {% if request.endpoint == 'acq.order_process' %}active{% endif %}"><i class="fas fa-shopping-cart"></i> <span>订单管理 Orders</span></a>
+                    {% endif %}
+                    {% if 'manage_acq_arrival' in session.get('permissions', []) or 'root_access' in session.get('permissions', []) %}
+                    <a href="{{ url_for('acq.arrival_check') }}" class="nav-item {% if request.endpoint == 'acq.arrival_check' %}active{% endif %}"><i class="fas fa-box-open"></i> <span>验收与入库 Receipt</span></a>
+                    {% endif %}
+                    {% if 'manage_circulation' in session.get('permissions', []) or 'root_access' in session.get('permissions', []) %}
+                    <a href="{{ url_for('circ.workbench') }}" class="nav-item {% if request.endpoint == 'circ.workbench' %}active{% endif %}"><i class="fas fa-id-card-alt"></i> <span>流通工作台 Circulation</span></a>
+                    {% endif %}
+                    {% if 'manage_users' in session.get('permissions', []) or 'root_access' in session.get('permissions', []) %}
+                    <a href="{{ url_for('sys_admin.user_list') }}" class="nav-item {% if 'sys_admin' in request.endpoint %}active{% endif %}"><i class="fas fa-users-cog"></i> <span>用户管理 Users</span></a>
+                    {% endif %}
+                {% endif %}
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('main.profile') }}" class="user-profile-link" title="个人信息设置 / Profile Settings">
+                    <img src="https://ui-avatars.com/api/?name={{ session.get('user_name', 'Guest') }}&background=0ea5e9&color=fff" style="width: 36px; height: 36px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.2);">
+                    <div style="flex: 1; overflow: hidden;">
+                        <div style="font-size: 13px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">{{ session.get('user_name', 'Please log in') }}</div>
+                        <div style="font-size: 11px; opacity: 0.6;">{{ session.get('role_name', 'Visitor') }}</div>
+                    </div>
+                </a>
+
+                {% if session.get('user_id') %}
+                <a href="{{ url_for('auth.logout') }}" title="Logout" style="color: white; opacity: 0.7; padding-left: 8px; border-left: 1px solid rgba(255,255,255,0.2);"><i class="fas fa-sign-out-alt"></i></a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}" title="Login" style="color: white; opacity: 0.7;"><i class="fas fa-sign-in-alt"></i></a>
+                {% endif %}
+            </div>
+        </aside>
+        <main class="main-content">
+            <header class="top-bar">
+                <div style="font-size: 18px; font-weight: 600; color: #333;">{% block page_title %}Dashboard{% endblock %}</div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    {% if session.get('user_id') %}
+                    <button class="btn-icon-soft" onclick="openModal('messageModal')" title="给管理员留言"><i class="far fa-envelope"></i></button>
+                    {% endif %}
+                    {% if 'publish_notice' in session.get('permissions', []) or 'root_access' in session.get('permissions', []) %}
+                    <button class="btn-icon-soft" onclick="openModal('noticePublishModal')" title="发布公告"><i class="fas fa-plus"></i></button>
+                    {% endif %}
+                    {% if session.get('role_id', 1) >= 2 %}
+                    <div class="notification-wrapper"><div class="bell-icon-btn" onclick="openModal('noticeListModal')"><i class="far fa-bell" style="font-size: 20px; color: #555;"></i><div class="notification-dot" id="noticeDot"></div></div></div>
+                    {% endif %}
+                </div>
+            </header>
+            <div class="content-scroll">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}{% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}
+                {% endwith %}
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+</body>
+</html>

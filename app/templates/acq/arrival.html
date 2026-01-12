@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+{% import "components/map_widget.html" as map_widget %}
+
+{% block page_title %}图书验收与编目 / Cataloging{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* --- 核心修复：iOS Modal 样式重构 --- */
+    /* 解决尖角问题：头部独立圆角 */
+    .ios-modal-header {
+        border-top-left-radius: 24px;
+        border-top-right-radius: 24px;
+        background: rgba(255, 255, 255, 0.95);
+    }
+
+    /* 搜索组合框 (Input Group) - 极致对齐 */
+    .ios-search-group {
+        display: flex;
+        align-items: center;
+        background: #f2f2f7; /* iOS System Gray 6 */
+        border-radius: 12px;
+        padding: 4px 6px 4px 12px;
+        border: 1px solid rgba(0,0,0,0.05);
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    .ios-search-group:focus-within {
+        background: #fff;
+        border-color: #007aff;
+        box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
+    }
+
+    /* 输入框本体 */
+    .ios-search-group input {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 8px 0 !important;
+        height: auto !important;
+        font-size: 14px;
+        font-weight: 500;
+        width: 100%;
+    }
+
+    /* 精致的搜索按钮 */
+    .ios-mini-btn {
+        height: 32px;
+        padding: 0 16px;
+        background: #007aff;
+        color: white;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        white-space: nowrap;
+        box-shadow: 0 2px 6px rgba(0, 122, 255, 0.25);
+        transition: transform 0.1s;
+        display: flex; align-items: center; justify-content: center; gap: 4px;
+    }
+    .ios-mini-btn:hover { background: #0062cc; }
+    .ios-mini-btn:active { transform: scale(0.96); }
+
+    /* 下拉结果列表 */
+    .search-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0; right: 0;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        box-shadow: 0 10px 40px -5px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+        z-index: 2000;
+        max-height: 280px;
+        overflow-y: auto;
+        display: none;
+        padding: 8px;
+    }
+
+    /* 结果项 */
+    .result-item {
+        padding: 10px 12px;
+        border-radius: 10px;
+        display: flex; gap: 12px; align-items: center;
+        cursor: pointer;
+        transition: background 0.2s;
+        border-bottom: 1px solid #f5f5f7;
+    }
+    .result-item:last-child { border-bottom: none; }
+    .result-item:hover { background: #f2f2f7; }
+
+    .result-thumb { width: 32px; height: 44px; background: #e5e5ea; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+    .result-info { flex: 1; overflow: hidden; }
+    .result-title { font-size: 13px; font-weight: 600; color: #1d1d1f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .result-sub { font-size: 11px; color: #86868b; margin-top: 2px; }
+
+    /* 成功后的全屏弹窗 */
+    .success-modal { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+    .success-box { width: 1100px; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.25); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; }
+    @keyframes popIn { from{transform: scale(0.95) translateY(20px); opacity: 0;} to{transform: scale(1) translateY(0); opacity: 1;} }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if new_book_map %}
+<div class="success-modal" id="successModal">
+    <div class="success-box">
+        <div style="padding: 24px 30px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+            <div><div style="font-size: 20px; font-weight: 700; color: #1d1d1f;"><i class="fas fa-check-circle" style="color:#34c759;"></i> 入库成功</div><div style="color: #86868b; font-size: 14px; margin-top: 4px;">{{ new_book_map.book_name }}</div></div>
+            <div style="text-align: right;"><div style="font-size: 12px; color: #86868b; text-transform: uppercase; font-weight: 600;">Call Number</div><div style="font-family: monospace; font-size: 24px; font-weight: 700; color: #007aff;">{{ new_book_map.call_no }}</div></div>
+        </div>
+        <div style="padding: 30px; background: #fafafa;">{{ map_widget.render_map(new_book_map, container_height="550px") }}</div>
+        <div style="padding: 15px 30px; text-align: right; background: white; border-top: 1px solid #eee;"><button class="btn-glow" onclick="document.getElementById('successModal').style.display='none'">完成 (Done)</button></div>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-title">待验收订单明细</div>
+    <table class="clean-table">
+        <thead>
+            <tr><th>订单号</th><th>书名 & 数量</th><th>出版社</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+            {% for item in orders %}
+            <tr>
+                <td>#{{ item['ORDER_NO'] }}</td>
+                <td>{{ item['BOOK_NAME'] }} <span style="color:#666;">(x{{ item['QUANTITY'] }})</span></td>
+                <td>{{ item['PUBLISHER'] }}</td>
+                <td>
+                    <button class="btn-glow" style="background:#10b981;"
+                            data-id="{{ item.LINE_ID }}"
+                            data-name="{{ item.BOOK_NAME }}"
+                            data-isbn="{{ item.ISBN }}"
+                            data-author="{{ item.AUTHOR }}"
+                            onclick="openCatalogModal(this)">
+                        验收编目
+                    </button>
+                    <button class="btn-glow" style="background:#ef4444;" onclick="openReturnModal('{{ item.LINE_ID }}', '{{ item.BOOK_NAME }}')">退货</button>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4">暂无数据</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="ios-modal-overlay" id="catalogModal">
+    <div class="ios-modal" style="overflow: visible;"> <div class="ios-modal-header">
+            <div class="ios-modal-title"><i class="fas fa-barcode" style="color:#007aff; margin-right:8px;"></i>图书编目入库</div>
+            <div class="ios-modal-close" onclick="closeModal('catalogModal')"><i class="fas fa-times"></i></div>
+        </div>
+        <div class="ios-modal-body" style="overflow: visible;">
+            <form method="POST" class="ios-form-group">
+                <input type="hidden" name="action" value="accept">
+                <input type="hidden" name="line_id" id="modal_line_id">
+
+                <div style="margin-bottom: 20px;">
+                    <label style="font-size:12px; color:#86868b; font-weight:600; margin-bottom:6px; display:block;">智能识别 (输入书名查找ISBN)</label>
+                    <div class="ios-search-group">
+                        <i class="fas fa-search" style="color:#999; margin-right:8px;"></i>
+                        <input type="text" id="smart_search_input" placeholder="输入书名..." autocomplete="off">
+                        <button type="button" class="ios-mini-btn" onclick="searchCatalogInfo()">
+                            查找
+                        </button>
+
+                        <div id="catalogSearchResults" class="search-dropdown"></div>
+                    </div>
+                </div>
+
+                <hr style="border:0; border-top:1px solid #f2f2f7; margin: 20px 0;">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label style="font-size:12px; color:#1d1d1f; font-weight:600;">图书名称</label>
+                        <input type="text" id="modal_book_name" class="ios-input" readonly style="background:#f5f5f7; color:#86868b;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:#1d1d1f; font-weight:600;">ISBN <span style="color:#ef4444;">*</span></label>
+                        <input type="text" name="isbn" id="modal_isbn" class="ios-input" required placeholder="必填">
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <label style="font-size:12px; color:#1d1d1f; font-weight:600;">作者</label>
+                    <input type="text" name="author" id="modal_author" class="ios-input" required>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <label style="font-size:12px; color:#1d1d1f; font-weight:600;">中图分类号 (CLC) <span style="color:#ef4444;">*</span></label>
+                    <select name="clc_code" class="ios-input" required>
+                        <option value="">请选择分类...</option>
+                        {% for code, name in clc_data.items() %}
+                        <option value="{{ code }}">{{ code }} - {{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="margin-top: 25px; text-align: right;">
+                    <button type="button" onclick="closeModal('catalogModal')" style="padding:10px 20px; border:none; background:transparent; color:#86868b; cursor:pointer; font-weight:600;">取消</button>
+                    <button type="submit" class="ios-btn-primary" style="width: auto; padding: 10px 30px;">确认入库</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="ios-modal-overlay" id="returnModal">
+    <div class="ios-modal">
+        <div class="ios-modal-header">
+            <div class="ios-modal-title">退 货</div>
+            <div class="ios-modal-close" onclick="closeModal('returnModal')"><i class="fas fa-times"></i></div>
+        </div>
+        <div class="ios-modal-body">
+            <form method="POST" class="ios-form-group">
+                <input type="hidden" name="action" value="return">
+                <input type="hidden" name="line_id" id="return_line_id">
+
+                <p style="margin-bottom:10px;">退货书名: <strong id="return_book_name"></strong></p>
+
+                <label style="font-size:12px; color:#666; font-weight:600;">退货理由(必选)</label>
+                <textarea name="return_reason" class="ios-input" rows="4" required placeholder="例如：书籍破损、发货错误..."></textarea>
+
+                <button type="submit" class="ios-btn-primary" style="background:#ef4444;">确认退货</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 修复：接收按钮元素本身作为参数
+    function openCatalogModal(btn) {
+        // 使用 classList.add 打开，触发 CSS opacity 动画，避免假死
+        document.getElementById('catalogModal').classList.add('open');
+
+        // 从 data 属性安全获取数据
+        const id = btn.getAttribute('data-id');
+        const name = btn.getAttribute('data-name');
+        const isbn = btn.getAttribute('data-isbn');
+        const author = btn.getAttribute('data-author');
+
+        document.getElementById('modal_line_id').value = id;
+        document.getElementById('modal_book_name').value = name;
+
+        // 搜索框默认填入书名，方便直接点击查找
+        document.getElementById('smart_search_input').value = name;
+
+        document.getElementById('modal_isbn').value = (isbn && isbn!='None') ? isbn : '';
+        document.getElementById('modal_author').value = author;
+    }
+
+    function openReturnModal(id, name) {
+        document.getElementById('return_line_id').value = id;
+        document.getElementById('return_book_name').innerText = name;
+        document.getElementById('returnModal').classList.add('open');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('open');
+    }
+
+    // --- 智能编目搜索逻辑 ---
+    async function searchCatalogInfo() {
+        const query = document.getElementById('smart_search_input').value.trim();
+        const resultsBox = document.getElementById('catalogSearchResults');
+        const btn = document.querySelector('.ios-mini-btn');
+
+        if (!query) return;
+
+        // Loading 状态
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        resultsBox.style.display = 'block';
+        resultsBox.innerHTML = '<div style="padding:15px; text-align:center; color:#86868b; font-size:12px;">正在连接 OpenLibrary...</div>';
+
+        try {
+            const res = await fetch("{{ url_for('acq.search_online') }}", {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({query: query})
+            });
+            const data = await res.json();
+
+            btn.innerHTML = '查找';
+
+            if (data.success && data.found) {
+                let html = '';
+                data.results.forEach(book => {
+                    const safeBook = JSON.stringify(book).replace(/"/g, '&quot;');
+                    const cover = book.cover || '{{ url_for("static", filename="asset/covers/default.png") }}';
+
+                    html += `
+                    <div class="result-item" onclick="fillCatalogInfo(${safeBook})">
+                        <img src="${cover}" class="result-thumb">
+                        <div class="result-info">
+                            <div class="result-title">${book.title}</div>
+                            <div class="result-sub">${book.author} · ${book.year || '-'}</div>
+                            <div class="result-sub" style="color:#007aff;">ISBN: ${book.isbn || 'N/A'}</div>
+                        </div>
+                    </div>
+                    `;
+                });
+                resultsBox.innerHTML = html;
+            } else {
+                resultsBox.innerHTML = '<div style="padding:15px; text-align:center; color:#86868b; font-size:12px;">未找到相关数据</div>';
+                setTimeout(() => resultsBox.style.display = 'none', 2000);
+            }
+        } catch (e) {
+            btn.innerHTML = '查找';
+            resultsBox.innerHTML = '<div style="padding:15px; text-align:center; color:#ef4444; font-size:12px;">网络错误</div>';
+        }
+    }
+
+    function fillCatalogInfo(book) {
+        document.getElementById('modal_isbn').value = book.isbn || '';
+        document.getElementById('modal_author').value = book.author || '';
+        document.getElementById('catalogSearchResults').style.display = 'none';
+
+        // 视觉反馈
+        const inputs = ['modal_isbn', 'modal_author'];
+        inputs.forEach(id => {
+            const el = document.getElementById(id);
+            el.style.transition = 'background 0.3s';
+            el.style.background = '#ecfdf5';
+            setTimeout(() => el.style.background = '', 600);
+        });
+    }
+
+    // 点击外部关闭搜索下拉
+    document.addEventListener('click', function(e) {
+        const box = document.getElementById('catalogSearchResults');
+        const inputGroup = document.querySelector('.ios-search-group');
+        if (box && box.style.display === 'block' && !inputGroup.contains(e.target)) {
+            box.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

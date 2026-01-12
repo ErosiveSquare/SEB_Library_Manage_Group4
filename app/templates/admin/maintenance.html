@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block page_title %}系统维护 / System Maintenance{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 0 auto;">
+    
+    <div class="card" style="margin-bottom: 30px; text-align: center; padding: 40px;">
+        <i class="fas fa-cogs" style="font-size: 48px; color: #64748b; margin-bottom: 20px;"></i>
+        <h2 style="margin-bottom: 10px; color: #1e293b;">Batch Processing Center</h2>
+        <p style="color: #64748b; font-size: 14px; max-width: 600px; margin: 0 auto;">
+            执行系统级自动化任务。建议由管理员定期手动触发，以模拟后台服务（Cron Jobs）的行为。<br>
+            Executes system-level automated tasks.
+        </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+        
+        <div class="card" style="border-top: 4px solid #f59e0b;">
+            <div class="card-title"><i class="fas fa-calendar-check"></i> 预约违约扫描</div>
+            <p style="color: #64748b; font-size: 13px; margin: 15px 0; min-height: 60px;">
+                检查状态为“已分配”但超过 3 天未取书的预约。系统将自动取消预约，释放图书，并对违约读者扣除 10 分信用分。
+            </p>
+            <form method="POST">
+                <input type="hidden" name="task_type" value="scan_reservation_expiry">
+                <button type="submit" class="btn-glow" style="width: 100%; background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">
+                    立即扫描 (Run Scan)
+                </button>
+            </form>
+        </div>
+
+        <div class="card" style="border-top: 4px solid #10b981;">
+            <div class="card-title"><i class="fas fa-user-plus"></i> 月度信用结算</div>
+            <p style="color: #64748b; font-size: 13px; margin: 15px 0; min-height: 60px;">
+                为所有信用分不满 100 分的用户自动恢复 10 分（不超过上限）。通常在每月 1 日执行。
+            </p>
+            <form method="POST" onsubmit="return confirm('确定要执行月度结算吗？这将增加用户信用分。');">
+                <input type="hidden" name="task_type" value="monthly_recovery">
+                <button type="submit" class="btn-glow" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                    执行恢复 (Execute Recovery)
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

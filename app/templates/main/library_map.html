@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% import "components/map_widget.html" as map_widget %}
+
+{% block page_title %}全馆空间 (Digital Twin){% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 0; overflow: hidden; background: transparent; box-shadow: none; border: none;">
+    <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: end;">
+        <div>
+            <h1 style="font-size: 24px; font-weight: 700; color: #1d1d1f; margin-bottom: 5px;">馆藏地图</h1>
+            <div style="color: #86868b; font-size: 14px;">实时馆藏热力分布 / Real-time Density Heatmap</div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 12px; color: #86868b; text-transform: uppercase; font-weight: 600;">全馆藏书</div>
+            <div style="font-size: 24px; font-weight: 700; color: #1d1d1f;">{{ map_data.total_stock }} <span style="font-size:14px; color:#86868b; font-weight:400;">册</span></div>
+        </div>
+    </div>
+
+    {{ map_widget.render_map(map_data, container_height="700px") }}
+</div>
+{% endblock %}

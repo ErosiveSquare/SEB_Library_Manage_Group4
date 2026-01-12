@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block page_title %}我的信用档案 / Credit Profile{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="text-align:center; padding:20px;">
+        <h1 style="font-size:48px; color:var(--brand-primary);">{{ current_score }}</h1>
+        <p style="color:#64748b;">当前信用分</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">信用变动记录</div>
+    <table class="clean-table">
+        <thead>
+            <tr>
+                <th>时间</th>
+                <th>变动值</th>
+                <th>原因</th>
+                <th>操作人</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log['LOG_TIME'] }}</td>
+                <td style="font-weight:bold; color: {{ '#10b981' if log['CHANGE_VAL'] > 0 else '#ef4444' }}">
+                    {{ '+' if log['CHANGE_VAL'] > 0 else '' }}{{ log['CHANGE_VAL'] }}
+                </td>
+                <td>{{ log['REASON'] }}</td>
+                <td>{{ log['OPERATOR'] }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4">暂无变动记录</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

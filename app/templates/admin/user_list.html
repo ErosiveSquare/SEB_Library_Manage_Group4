@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block page_title %}用户与权限管理{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">用户操作面板</div>
+
+    <form method="POST" style="background:#f8fafc; padding:15px; border-radius:10px; display:flex; gap:10px; align-items:center; margin-bottom: 20px;">
+        <input type="hidden" name="action" value="update_credit">
+        <label style="font-size:13px; font-weight:600; color:#64748b;">信用分:</label>
+        <input type="text" name="reader_id" placeholder="读者ID" class="search-input" style="width:150px;" required>
+        <select name="change_val" class="search-input" style="width:120px;">
+            <option value="10">+10 分</option>
+            <option value="-10">-10 分</option>
+        </select>
+        <input type="text" name="reason" placeholder="修改原因" class="search-input" style="flex:1;" required>
+        <button type="submit" class="btn-glow">更新</button>
+    </form>
+
+    {% if session.get('role_id') == 8 %}
+    <form method="POST" style="background:#eef2ff; padding:15px; border-radius:10px; display:flex; gap:10px; align-items:center; border:1px solid #c7d2fe;">
+        <input type="hidden" name="action" value="update_role">
+        <label style="font-size:13px; font-weight:600; color:#4338ca;">角色任命:</label>
+        <input type="text" name="reader_id" placeholder="目标ID (如教职工)" class="search-input" style="width:150px;" required>
+        <select name="new_role_id" class="search-input" style="flex:1;">
+            {% for role in all_roles %}
+            <option value="{{ role.ROLE_ID }}">{{ role.ROLE_ID }} - {{ role.ROLE_NAME }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn-glow" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">保存角色</button>
+    </form>
+    <div style="font-size:12px; color:#888; margin-top:8px;">* 说明：教职工注册后默认为Role 3，超级管理员可将其提升为各类管理员 (Role 4-8)。1001账号锁定不可修改。</div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-title">系统用户列表</div>
+    <table class="clean-table">
+        <thead>
+            <tr><th>ID</th><th>姓名</th><th>当前角色</th><th>信用分</th></tr>
+        </thead>
+        <tbody>
+            {% for r in readers %}
+            <tr>
+                <td>{{ r['READER_ID'] }}</td>
+                <td>{{ r['NAME'] }}</td>
+                <td>
+                    <span style="
+                        padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+                        {% if r['ROLE_ID'] == 8 %}background:#fef2f2; color:#ef4444; border:1px solid #fecaca;
+                        {% elif r['ROLE_ID'] > 3 %}background:#eef2ff; color:#4f46e5; border:1px solid #c7d2fe;
+                        {% elif r['ROLE_ID'] == 2 %}background:#ecfdf5; color:#059669;
+                        {% else %}background:#f8fafc; color:#64748b;{% endif %}
+                    ">
+                        {{ r['ROLE_NAME'] }}
+                    </span>
+                </td>
+                <td style="font-weight:bold; color:{% if r['CURRENT_CREDIT']<60 %}red{% else %}green{% endif %}">
+                    {{ r['CURRENT_CREDIT'] }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

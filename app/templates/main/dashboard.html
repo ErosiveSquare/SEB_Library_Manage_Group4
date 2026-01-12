@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+
+{% block page_title %}图书馆首页 / Library Home{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* 0. 顶部动态时钟容器 */
+    .smart-clock-card {
+        background: white;
+        border-radius: 24px;
+        padding: 24px 40px;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 10px 30px -10px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.02);
+        position: relative;
+        overflow: hidden;
+    }
+    .smart-clock-card::before {
+        content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+        background: radial-gradient(circle, rgba(59,130,246,0.03) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    /* 模拟时钟 (Analog) */
+    .analog-clock {
+        width: 120px; height: 120px;
+        border-radius: 50%;
+        background: #f8fafc;
+        border: 4px solid #fff;
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.05), inset 0 0 20px rgba(0,0,0,0.05);
+        position: relative;
+        flex-shrink: 0;
+    }
+    .clock-face {
+        position: relative; width: 100%; height: 100%; transform: translateY(-3px); /* correction for hands */
+    }
+    .hand {
+        width: 50%; height: 6px;
+        background: #1e293b;
+        position: absolute; top: 50%; right: 50%;
+        transform-origin: 100%;
+        transform: rotate(90deg);
+        transition: all 0.05s;
+        border-radius: 6px;
+    }
+    .hand-hour { height: 6px; width: 35%; background: #334155; }
+    .hand-min { height: 4px; width: 45%; background: #64748b; }
+    .hand-sec { height: 2px; background: #ef4444; width: 48%; transition: none; }
+    .clock-center {
+        width: 12px; height: 12px; background: #334155; border-radius: 50%;
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* 数字时间 (Digital) */
+    .digital-time-container {
+        text-align: right;
+        display: flex; flex-direction: column; justify-content: center;
+    }
+    .digital-time {
+        font-size: 64px; font-weight: 200; color: #1e293b;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -2px; line-height: 1;
+    }
+    .digital-date {
+        font-size: 18px; color: #64748b; font-weight: 500;
+        margin-top: 8px; text-transform: uppercase; letter-spacing: 1px;
+    }
+
+    /* 1. 核心指标卡片 */
+    .hero-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+        margin-bottom: 30px;
+    }
+    .hero-card {
+        background: white;
+        border-radius: 20px;
+        padding: 24px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.04);
+        transition: transform 0.3s;
+        border: 1px solid rgba(0,0,0,0.02);
+        display: flex; flex-direction: column; justify-content: center;
+    }
+    .hero-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+    .hero-icon-bg {
+        position: absolute; top: -15px; right: -15px; font-size: 110px; opacity: 0.06; transform: rotate(15deg); pointer-events: none;
+    }
+    .hero-num {
+        font-size: 36px; font-weight: 800; color: #1e293b; letter-spacing: -1.5px; margin-bottom: 4px; line-height: 1;
+    }
+    .hero-label {
+        font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+    }
+    .hero-trend {
+        font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;
+        background: #f1f5f9; padding: 6px 10px; border-radius: 8px; width: fit-content;
+    }
+
+    /* 2. 图表区域布局 */
+    .chart-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr; /* 2:1:1 布局 */
+        gap: 24px;
+        margin-bottom: 30px;
+        align-items: stretch;
+    }
+    .chart-card {
+        background: white; border-radius: 20px; padding: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+        border: 1px solid rgba(0,0,0,0.03);
+        display: flex; flex-direction: column;
+        height: 360px; /* 固定卡片高度，保证整齐 */
+    }
+    .chart-wrapper {
+        position: relative;
+        flex: 1; /* 撑满剩余空间 */
+        width: 100%;
+        min-height: 0; /* 允许 flex item 缩小 */
+    }
+
+    /* --- 每日金句 (Sticky Note Style) --- */
+    .quote-card {
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); /* 柔和的黄色渐变 */
+        position: relative;
+        overflow: hidden;
+    }
+    /* 背景水印引号 */
+    .quote-watermark {
+        position: absolute;
+        top: -10px; left: 10px;
+        font-size: 120px;
+        color: #d97706;
+        opacity: 0.1;
+        font-family: serif;
+        pointer-events: none;
+    }
+    .quote-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 0 20px;
+        z-index: 2;
+    }
+    /* 动态文字效果 */
+    .quote-text {
+        font-size: 18px;
+        font-weight: 600;
+        color: #451a03; /* 深棕色文字，对比度高 */
+        line-height: 1.6;
+        font-family: "PingFang SC", "Songti SC", "SimSun", serif; /* 衬线体 */
+        margin-bottom: 16px;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        min-height: 60px; /* 防止高度跳动 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .quote-text.active {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .quote-author {
+        font-size: 13px;
+        color: #92400e;
+        font-style: italic;
+        opacity: 0;
+        transition: opacity 0.8s ease 0.2s; /* 延迟显示 */
+    }
+    .quote-author.active {
+        opacity: 0.8;
+    }
+
+    /* 3. 推荐书目 */
+    .arrival-grid {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+    }
+    .book-thumb {
+        background: white; border-radius: 16px; padding: 16px; transition: all 0.2s; cursor: pointer;
+        display: flex; flex-direction: column; align-items: center; text-align: center;
+        border: 1px solid transparent;
+    }
+    .book-thumb:hover {
+        background: white; box-shadow: 0 10px 30px -5px rgba(0,0,0,0.1); border-color: #e2e8f0; transform: translateY(-3px);
+    }
+    .book-thumb img {
+        width: 100px; height: 140px; object-fit: cover; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); margin-bottom: 12px;
+    }
+    .book-thumb h4 {
+        font-size: 14px; font-weight: 600; color: #333; margin-bottom: 4px;
+        display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .book-thumb p { font-size: 12px; color: #888; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="smart-clock-card">
+    <div style="display: flex; align-items: center; gap: 20px;">
+        <div class="analog-clock">
+            <div class="clock-face">
+                <div class="hand hand-hour"></div>
+                <div class="hand hand-min"></div>
+                <div class="hand hand-sec"></div>
+                <div class="clock-center"></div>
+            </div>
+        </div>
+        <div>
+            <div style="font-size: 20px; font-weight: 700; color: #334155;">华北电力大学网上图书馆</div>
+            <div style="font-size: 14px; color: #94a3b8;">智慧服务终端 · Smart Terminal</div>
+        </div>
+    </div>
+
+    <div class="digital-time-container">
+        <div class="digital-time" id="digitalTime">00:00:00</div>
+        <div class="digital-date" id="digitalDate">MONDAY, JAN 01</div>
+    </div>
+</div>
+
+<div class="hero-stat-grid">
+    <div class="hero-card">
+        <i class="fas fa-layer-group hero-icon-bg" style="color: #3b82f6;"></i>
+        <div class="hero-label">全部馆藏</div>
+        <div class="hero-num">{{ stats.titles }} <span style="font-size:16px; color:#cbd5e1; font-weight:400;">种</span></div>
+        <div class="hero-trend" style="color:#3b82f6; background: rgba(59, 130, 246, 0.1);">
+            <i class="fas fa-book"></i> 实物 {{ stats.books }} 册
+        </div>
+    </div>
+    <div class="hero-card">
+        <i class="fas fa-hand-holding-heart hero-icon-bg" style="color: #8b5cf6;"></i>
+        <div class="hero-label">总计借阅</div>
+        <div class="hero-num">{{ stats.borrows }} <span style="font-size:16px; color:#cbd5e1; font-weight:400;">次</span></div>
+        <div class="hero-trend" style="color:#8b5cf6; background: rgba(139, 92, 246, 0.1);">
+            <i class="fas fa-history"></i> 历史累计流通
+        </div>
+    </div>
+    <div class="hero-card">
+        <i class="fas fa-book-reader hero-icon-bg" style="color: #10b981;"></i>
+        <div class="hero-label">当前借出</div>
+        <div class="hero-num">{{ stats.active }} <span style="font-size:16px; color:#cbd5e1; font-weight:400;">本</span></div>
+        <div class="hero-trend" style="color:#10b981; background: rgba(16, 185, 129, 0.1);">
+            <i class="fas fa-clock"></i> 正在外借中
+        </div>
+    </div>
+    <div class="hero-card">
+        <i class="fas fa-user-friends hero-icon-bg" style="color: #f59e0b;"></i>
+        <div class="hero-label">今日借阅</div>
+        <div class="hero-num">{{ stats.today_borrowers }} <span style="font-size:16px; color:#cbd5e1; font-weight:400;">人</span></div>
+        <div class="hero-trend" style="color:#f59e0b; background: rgba(245, 158, 11, 0.1);">
+            <i class="fas fa-calendar-day"></i> 今日产生借阅的读者
+        </div>
+    </div>
+</div>
+
+<div class="chart-layout">
+
+    <div class="chart-card">
+        <div class="card-title" style="margin-bottom: 10px; font-size: 16px;">
+            <i class="fas fa-chart-line" style="color:#3b82f6; margin-right:8px;"></i>近7天借阅趋势 / Weekly Trend
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <div class="card-title" style="margin-bottom: 10px; font-size: 16px;">
+            <i class="fas fa-chart-pie" style="color:#8b5cf6; margin-right:8px;"></i>馆藏分布 (Top 10)
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="categoryChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-card quote-card">
+        <div class="quote-watermark">“</div>
+        <div class="card-title" style="margin-bottom: 10px; font-size: 16px; color: #92400e;">
+            <i class="fas fa-bookmark" style="margin-right:8px;"></i>每日金句 / Daily Quote
+        </div>
+        <div class="quote-container">
+            <div id="quoteText" class="quote-text">Loading...</div>
+            <div id="quoteAuthor" class="quote-author"></div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header-row">
+        <div class="card-title"><i class="fas fa-sparkles" style="color:#f59e0b;"></i> 新书速递 / New Arrivals</div>
+        <a href="{{ url_for('main.search') }}" style="font-size:13px; color:#3b82f6; text-decoration:none;">浏览全部 <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="arrival-grid">
+        {% for book in new_arrivals %}
+        <div class="book-thumb" onclick="window.location.href='{{ url_for('main.book_detail', isbn=book['ISBN']) }}'">
+            <img src="{{ url_for('static', filename='asset/covers/' + book['cover_image']) }}">
+            <h4>{{ book['BOOK_NAME'] }}</h4>
+            <p>{{ book['AUTHOR'] }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    // --- 1. 动态时钟逻辑 ---
+    function updateClock() {
+        const now = new Date();
+        const seconds = now.getSeconds();
+        const minutes = now.getMinutes();
+        const hours = now.getHours();
+
+        // Analog Hands
+        const secDegrees = ((seconds / 60) * 360) + 90;
+        const minDegrees = ((minutes / 60) * 360) + ((seconds/60)*6) + 90;
+        const hourDegrees = ((hours / 12) * 360) + ((minutes/60)*30) + 90;
+
+        document.querySelector('.hand-sec').style.transform = `rotate(${secDegrees}deg)`;
+        document.querySelector('.hand-min').style.transform = `rotate(${minDegrees}deg)`;
+        document.querySelector('.hand-hour').style.transform = `rotate(${hourDegrees}deg)`;
+
+        // Digital Display
+        const timeStr = now.toLocaleTimeString('en-GB', { hour12: false });
+        const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', month: 'short', day: 'numeric' });
+
+        document.getElementById('digitalTime').innerText = timeStr;
+        document.getElementById('digitalDate').innerText = dateStr.toUpperCase();
+    }
+    setInterval(updateClock, 1000);
+    updateClock(); // Init
+
+    // --- 2. 每日金句轮播逻辑 (便签效果) ---
+    const quotes = [
+        { text: "图书馆是不仅是知识的宝库，也是想象力的避难所。", author: "—— 博尔赫斯" },
+        { text: "阅读是一座随身携带的避难所。", author: "—— 毛姆" },
+        { text: "我心里一直都在暗暗设想，天堂应该是图书馆的模样。", author: "—— 博尔赫斯" },
+        { text: "书籍是人类进步的阶梯。", author: "—— 高尔基" },
+        { text: "读一本好书，就是和许多高尚的人谈话。", author: "—— 歌德" },
+        { text: "书犹药也，善读之可以医愚。", author: "—— 刘向" }
+    ];
+    let currentQuoteIdx = 0;
+    const textEl = document.getElementById('quoteText');
+    const authorEl = document.getElementById('quoteAuthor');
+
+    function showNextQuote() {
+        const q = quotes[currentQuoteIdx];
+
+        // 1. 移除 active class，触发 fade out
+        textEl.classList.remove('active');
+        authorEl.classList.remove('active');
+
+        // 2. 等待 fade out 结束后更新内容并 fade in
+        setTimeout(() => {
+            textEl.innerText = q.text;
+            authorEl.innerText = q.author;
+
+            textEl.classList.add('active');
+            authorEl.classList.add('active');
+        }, 800); // 对应 CSS transition 时间
+
+        currentQuoteIdx = (currentQuoteIdx + 1) % quotes.length;
+    }
+
+    // 初始化显示第一条
+    showNextQuote();
+    // 每 6 秒轮播
+    setInterval(showNextQuote, 6000);
+
+
+    // --- 3. Chart.js 图表配置 ---
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif';
+    Chart.defaults.color = '#64748b';
+
+    // 趋势图
+    const ctxTrend = document.getElementById('trendChart').getContext('2d');
+    const gradientBorrow = ctxTrend.createLinearGradient(0, 0, 0, 400);
+    gradientBorrow.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+    gradientBorrow.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+    new Chart(ctxTrend, {
+        type: 'line',
+        data: {
+            labels: {{ stats.trend_labels | tojson }},
+            datasets: [{
+                label: '借阅量',
+                data: {{ stats.trend_data | tojson }},
+                backgroundColor: gradientBorrow,
+                borderColor: '#3b82f6',
+                borderWidth: 3,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#3b82f6',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                    padding: 10,
+                    cornerRadius: 8,
+                    displayColors: false
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { borderDash: [5, 5], color: '#f1f5f9' }, ticks: { stepSize: 1 } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // 分类图 (Top 10 优化配色)
+    const ctxCat = document.getElementById('categoryChart').getContext('2d');
+    new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+            labels: {{ stats.pie_labels | tojson }},
+            datasets: [{
+                data: {{ stats.pie_data | tojson }},
+                backgroundColor: [
+                    '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444',
+                    '#06b6d4', '#ec4899', '#6366f1', '#84cc16', '#14b8a6',
+                    '#cbd5e1' // 灰色给"其他"
+                ],
+                borderWidth: 0,
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        boxWidth: 6,
+                        font: { size: 11 } // 稍微调小字体适应更多条目
+                    }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+</script>
+{% endblock %}

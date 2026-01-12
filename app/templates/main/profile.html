@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block page_title %}个人设置 / Profile & Settings{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* iOS Settings Style Layout - Optimized */
+    .profile-container {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 30px;
+        align-items: start;
+    }
+
+    .settings-group {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 24px;
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+
+    .settings-header {
+        padding: 16px 20px;
+        font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;
+        background: #f8fafc;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .settings-item {
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 15px; color: #1e293b;
+        min-height: 55px;
+    }
+    .settings-item:last-child { border-bottom: none; }
+
+    /* 核心修复：固定标签宽度，确保输入框起始位置一致 */
+    .settings-label {
+        font-weight: 500;
+        color: #1d1d1f;
+        width: 110px;        /* 固定宽度 */
+        flex: 0 0 110px;     /* 禁止伸缩 */
+        margin-right: 15px;
+        display: flex;       /* 确保图标和文字垂直居中 */
+        align-items: center;
+    }
+
+    /* 只读文本：保持右对齐 iOS 设置风格 */
+    .settings-value {
+        color: #64748b;
+        font-family: -apple-system, sans-serif;
+        text-align: right;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* 输入框样式：改为左对齐更利于输入，且长度统一 */
+    .ios-input-clean {
+        border: none;
+        background: transparent;
+        text-align: left;    /* 输入模式改为左对齐，视觉更整齐 */
+        flex: 1;             /* 填满剩余空间，长度绝对一致 */
+        font-size: 15px;
+        color: #007aff;
+        outline: none;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        padding: 0;
+        margin: 0;
+        height: 100%;
+    }
+    .ios-input-clean:focus {
+        color: #0056b3;
+    }
+    .ios-input-clean::placeholder {
+        color: #94a3b8;
+    }
+
+    /* Credit Score Card */
+    .credit-score-card {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        text-align: center;
+        padding: 40px 20px;
+        border-radius: 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    .score-big { font-size: 64px; font-weight: 800; line-height: 1; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .score-label { opacity: 0.9; font-size: 14px; letter-spacing: 1px; }
+
+    /* Log Timeline */
+    .log-list { list-style: none; }
+    .log-item {
+        padding: 16px 0; border-bottom: 1px solid #f1f5f9;
+        display: flex; gap: 15px;
+    }
+    .log-icon {
+        width: 36px;
+        height: 36px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 14px; flex-shrink: 0;
+    }
+    .log-content { flex: 1; }
+    .log-time { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    .log-val { font-weight: 700; font-size: 16px; }
+
+    @media (max-width: 900px) {
+        .profile-container { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+
+    <div>
+        <div class="credit-score-card" style="{{ 'background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);'
+            if user['CURRENT_CREDIT'] < 60 else '' }}">
+            <div class="score-big">{{ user['CURRENT_CREDIT'] }}</div>
+            <div class="score-label">当前信用分 (Credit Score)</div>
+            <div style="margin-top: 15px; font-size: 12px; background: rgba(255,255,255,0.2); display: inline-block; padding: 4px 12px; border-radius: 20px; backdrop-filter: blur(5px);">
+                {% if user['CURRENT_CREDIT'] >= 90 %} 信用极好 (Excellent)
+                {% elif user['CURRENT_CREDIT'] >= 60 %} 信用良好 (Good)
+                {% else %} 信用受限 (Restricted) {% endif %}
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <div class="settings-header">基础信息 (Read Only)</div>
+            <div class="settings-item">
+                <div class="settings-label">用户 ID</div>
+                <div class="settings-value">{{ user['READER_ID'] }}</div>
+            </div>
+            <div class="settings-item">
+                <div class="settings-label">姓名</div>
+                <div class="settings-value">{{ user['NAME'] }}</div>
+            </div>
+            <div class="settings-item">
+                <div class="settings-label">角色</div>
+                <div class="settings-value">
+                    <span style="background: #eff6ff; color: #3b82f6; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;">
+                        {{ user['ROLE_NAME'] }}
+                    </span>
+                </div>
+            </div>
+            <div class="settings-item">
+                <div class="settings-label">账户有效期</div>
+                <div class="settings-value">{{ user['EXPIRY_DATE'] }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <form method="POST" action="{{ url_for('main.update_profile') }}">
+            <input type="hidden" name="action" value="update_info">
+            <div class="settings-group">
+                <div class="settings-header">
+                    <span>联系方式维护</span>
+                    <button type="submit" style="border:none; background:none; color:#007aff; font-weight:600; cursor:pointer; font-size: 13px;">保存</button>
+                </div>
+                <div class="settings-item">
+                    <div class="settings-label"><i class="far fa-envelope" style="width:20px; color:#94a3b8; margin-right: 4px;"></i> 电子邮箱</div>
+                    <input type="email" name="email" class="ios-input-clean"
+                           value="{{ user['EMAIL'] if user['EMAIL'] else '' }}"
+                           placeholder="输入电子邮箱" required>
+                </div>
+                <div class="settings-item">
+                    <div class="settings-label"><i class="fas fa-mobile-alt" style="width:20px; color:#94a3b8; margin-right: 4px;"></i> 手机号码</div>
+                    <input type="tel" name="phone" class="ios-input-clean"
+                           value="{{ user['TELEPHONE'] if user['TELEPHONE'] else '' }}"
+                           placeholder="输入手机号码" pattern="[0-9]{11}" title="请输入11位手机号" required>
+                </div>
+            </div>
+        </form>
+
+        <form method="POST" action="{{ url_for('main.update_profile') }}" onsubmit="return validatePwd()">
+            <input type="hidden" name="action" value="change_password">
+            <div class="settings-group">
+                <div class="settings-header">
+                    <span>安全设置</span>
+                    <button type="submit" style="border:none; background:none; color:#007aff; font-weight:600; cursor:pointer; font-size: 13px;">修改密码</button>
+                </div>
+                <div class="settings-item">
+                    <div class="settings-label">新密码</div>
+                    <input type="password" name="new_password" id="newPwd" class="ios-input-clean" placeholder="输入新密码" required minlength="6">
+                </div>
+                <div class="settings-item">
+                    <div class="settings-label">确认密码</div>
+                    <input type="password" name="confirm_password" id="confirmPwd" class="ios-input-clean" placeholder="再次输入密码" required>
+                </div>
+            </div>
+        </form>
+
+        <div class="card">
+            <div class="card-title"><i class="fas fa-history" style="color: #64748b; margin-right: 8px;"></i> 信用分变更明细 / Credit Logs</div>
+            <ul class="log-list">
+                {% for log in credit_logs %}
+                <li class="log-item">
+                    <div class="log-icon" style="background: {{ '#ecfdf5' if log['CHANGE_VAL'] > 0 else '#fef2f2' }};
+                        color: {{ '#10b981' if log['CHANGE_VAL'] > 0 else '#ef4444' }};">
+                        <i class="fas {{ 'fa-plus' if log['CHANGE_VAL'] > 0 else 'fa-minus' }}"></i>
+                    </div>
+                    <div class="log-content">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-weight: 500; color: #334155;">{{ log['REASON'] }}</span>
+                            <span class="log-val" style="color: {{ '#10b981' if log['CHANGE_VAL'] > 0 else '#ef4444' }}">
+                                {{ '+' if log['CHANGE_VAL'] > 0 else '' }}{{ log['CHANGE_VAL'] }}
+                            </span>
+                        </div>
+                        <div class="log-time">操作人: {{ log['OPERATOR'] }} · {{ log['LOG_TIME'] }}</div>
+                    </div>
+                </li>
+                {% else %}
+                <li style="text-align:center; padding: 40px; color: #94a3b8;">
+                    <i class="far fa-file-alt" style="font-size: 24px; margin-bottom: 10px; opacity: 0.5;"></i><br>
+                    暂无信用变更记录
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    function validatePwd() {
+        var p1 = document.getElementById("newPwd").value;
+        var p2 = document.getElementById("confirmPwd").value;
+        if(p1 != p2) {
+            alert("两次输入的密码不一致！");
+            return false;
+        }
+        return true;
+    }
+</script>
+{% endblock %}

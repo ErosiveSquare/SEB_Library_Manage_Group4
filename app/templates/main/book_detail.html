@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% import "components/map_widget.html" as map_widget %}
+
+{% block page_title %}图书详情{% endblock %}
+
+{% block content %}
+<div style="display:flex; gap:30px; margin-bottom: 30px;">
+    <div class="card" style="width:300px; text-align:center;">
+        <i class="fas fa-book" style="font-size:80px; color:#cbd5e1; margin:20px 0;"></i>
+        <h2>{{ book['BOOK_NAME'] }}</h2>
+        <p>{{ book['AUTHOR'] }}</p>
+        <p>ISBN: {{ book['ISBN'] }}</p>
+        <div style="margin-top:20px; font-family: monospace; background:#f1f5f9; padding:5px; border-radius:5px;">
+            {{ book['CALL_NUMBER'] }}
+        </div>
+
+        {% set available = copies | selectattr('STATUS', 'equalto', 1) | list | length %}
+
+        {% if available == 0 %}
+            <div style="margin-top: 20px;">
+                <form action="{{ url_for('circ.reserve') }}" method="POST">
+                    <input type="hidden" name="isbn" value="{{ book['ISBN'] }}">
+                    <button class="btn-glow" style="width: 100%; background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">
+                        <i class="fas fa-clock"></i> 预约本书 (Reserve)
+                    </button>
+                </form>
+                <div style="margin-top:8px; font-size:12px; color:#d97706; line-height: 1.5;">
+                    当前无在馆复本，可预约排队。<br>
+                    <span style="opacity:0.8;">(需信用分 >= 90，且无其他预约)</span>
+                </div>
+            </div>
+        {% else %}
+            <div style="margin-top: 20px;">
+                 <button class="btn-glow" disabled style="width: 100%; background: #e2e8f0; color: #94a3b8; box-shadow: none; cursor: default;">
+                    <i class="fas fa-check-circle"></i> 馆内有书
+                </button>
+                <div style="margin-top:8px; font-size:12px; color:#64748b;">请直接前往架位借阅</div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="card" style="flex:1;">
+        <div class="card-title">馆藏复本</div>
+        <table class="clean-table">
+            <thead>
+                <tr>
+                    <th>条码</th>
+                    <th>状态</th>
+                    <th>位置</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for copy in copies %}
+                <tr>
+                    <td>{{ copy['BARCODE'] }}</td>
+                    <td>
+                        {% if copy['STATUS'] == 1 %}<span style="color:#10b981; font-weight:600;">在馆 (Available)</span>
+                        {% elif copy['STATUS'] == 2 %}<span style="color:#f59e0b;">借出 (Borrowed)</span>
+                        {% elif copy['STATUS'] == 3 %}<span style="color:#3b82f6;">被预约 (Reserved)</span>
+                        {% elif copy['STATUS'] == 4 %}<span style="color:#ef4444;">报损 (Damaged)</span>
+                        {% else %}不可用{% endif %}
+                    </td>
+                    <td>{{ copy['LOCATION'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header-row">
+        <div class="card-title"><i class="fas fa-map-marked-alt"></i> 馆藏位置指引 / Location Map</div>
+        <div style="font-size: 13px; color: #666;">
+            位于：{{ '2楼 自然科学区' if map_data.target_floor == 2 else '1楼 人文社科区' }}
+        </div>
+    </div>
+    {{ map_widget.render_map(map_data) }}
+</div>
+{% endblock %}

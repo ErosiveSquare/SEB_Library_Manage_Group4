@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block page_title %}借阅记录 / History{% endblock %}
+
+{% block content %}
+<div class="ios-modal-overlay" id="extendModal">
+    <div class="ios-modal">
+        <div class="ios-modal-header">
+            <div class="ios-modal-title">Apply for Extension</div>
+            <div class="ios-modal-close" onclick="closeModal('extendModal')"><i class="fas fa-times"></i></div>
+        </div>
+        <div class="ios-modal-body">
+            <form action="{{ url_for('circ.apply_extension') }}" method="POST" class="ios-form-group">
+                <input type="hidden" name="borrow_id" id="modal_borrow_id">
+                <label style="display:block; margin-bottom:8px; font-weight:600; color:#555;">延期天数 (1-7天)</label>
+                <select name="days" class="ios-select">
+                    <option value="1">1 天</option>
+                    <option value="3">3 天</option>
+                    <option value="5">5 天</option>
+                    <option value="7" selected>7 天</option>
+                </select>
+                <label style="display:block; margin-bottom:8px; font-weight:600; color:#555;">申请理由</label>
+                <textarea name="reason" class="ios-input" rows="3" placeholder="例如：课程论文需要..." required></textarea>
+                <button type="submit" class="ios-btn-primary">Submit Application</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header-row">
+        <div class="card-title">我的借阅流水</div>
+        <div style="font-size: 13px; color: #64748b;">当前信用分: <strong style="color: {{ '#10b981' if current_credit >= 80 else '#ef4444' }}">{{ current_credit }}</strong> (>=80分可延期)</div>
+    </div>
+
+    <table class="clean-table">
+        <thead>
+            <tr>
+                <th>图书名称</th>
+                <th>借阅日期</th>
+                <th>应还日期</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in records %}
+            <tr>
+                <td>{{ r['BOOK_NAME'] }} <br><span style="font-size:12px; color:#888;">{{ r['BARCODE'] }}</span></td>
+                <td>{{ r['BORROW_DATE'] }}</td>
+                <td>{{ r['DUE_DATE'] }}</td>
+                <td>
+                    {% if r['STATUS'] == 1 %}<span style="color:#10b981;">借阅中</span>
+                    {% elif r['STATUS'] == 3 %}<span style="color:#ef4444;">已逾期</span>
+                    {% else %}<span style="color:#64748b;">已归还</span>{% endif %}
+                </td>
+                <td>
+                    {% if r['STATUS'] == 1 %}
+                        {% if r['APP_STATUS'] == 0 %}
+                            <span style="font-size:12px; color:#f59e0b;">审核中</span>
+                        {% elif r['APP_STATUS'] == 1 %}
+                            <span style="font-size:12px; color:#10b981;">已延期</span>
+                        {% elif r['APP_STATUS'] == 2 %}
+                            <span style="font-size:12px; color:#ef4444;">已拒绝</span>
+                        {% else %}
+                            {% if current_credit >= 80 %}
+                            <button class="btn-glow" style="padding:4px 8px; font-size:12px;" onclick="openExtendModal('{{ r.BORROW_ID }}')">申请延期</button>
+                            {% else %}
+                            <span style="font-size:12px; color:#94a3b8; cursor:not-allowed;" title="信用分不足80">不可延期</span>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    function openExtendModal(borrowId) { document.getElementById('modal_borrow_id').value = borrowId; document.getElementById('extendModal').classList.add('open'); }
+</script>
+{% endblock %}

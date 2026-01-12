@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block page_title %}流通工作台 / Circulation Desk{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 30px; align-items: stretch;">
+
+    <div class="card" style="border-top: 4px solid var(--brand-primary); display: flex; flex-direction: column; height: 100%;">
+        <div class="card-header-row" style="margin-bottom: 20px;">
+            <div class="card-title"><i class="fas fa-upload" style="margin-right: 8px;"></i> 借书 (Check Out)</div>
+        </div>
+        <form method="POST" style="display: flex; flex-direction: column; flex: 1;">
+            <input type="hidden" name="action" value="borrow">
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight:600; font-size: 13px; color: #64748b; margin-bottom: 6px; display: block;">读者ID</label>
+                <input type="text" name="reader_id" class="search-input" placeholder="请扫描或输入学号/工号" required style="margin-bottom: 0;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight:600; font-size: 13px; color: #64748b; margin-bottom: 6px; display: block;">图书条码</label>
+                <input type="text" name="barcode" class="search-input" placeholder="请扫描图书条形码" required style="margin-bottom: 0;">
+            </div>
+
+            <button type="submit" class="btn-glow" style="width:100%; margin-top: auto; justify-content: center;">
+                <i class="fas fa-check"></i> 确认借阅
+            </button>
+        </form>
+    </div>
+
+    <div class="card" style="border-top: 4px solid #10b981; display: flex; flex-direction: column; height: 100%;">
+        <div class="card-header-row" style="margin-bottom: 20px;">
+            <div class="card-title"><i class="fas fa-download" style="margin-right: 8px;"></i> 还书 (Check In)</div>
+        </div>
+        <form method="POST" style="display: flex; flex-direction: column; flex: 1;">
+            <input type="hidden" name="action" value="return">
+
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight:600; font-size: 13px; color: #64748b; margin-bottom: 6px; display: block;">图书条码</label>
+                <input type="text" name="barcode" class="search-input" placeholder="请扫描图书条形码" required style="margin-bottom: 0;">
+            </div>
+
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 20px; line-height: 1.5; background: #f8fafc; padding: 10px; border-radius: 8px;">
+                <i class="fas fa-info-circle"></i> 系统将自动计算逾期罚款并更新图书状态。
+            </div>
+
+            <button type="submit" class="btn-glow" style="width:100%; margin-top: auto; background: linear-gradient(135deg, #10b981, #059669); justify-content: center;">
+                <i class="fas fa-box-open"></i> 确认归还
+            </button>
+        </form>
+    </div>
+
+    <div class="card" style="border-top: 4px solid #ef4444; display: flex; flex-direction: column; height: 100%;">
+        <div class="card-header-row" style="margin-bottom: 20px;">
+            <div class="card-title"><i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i> 报损 (Damage)</div>
+        </div>
+        <form method="POST" onsubmit="return confirm('确定要标记此书为报损/丢失吗？此操作不可逆！');" style="display: flex; flex-direction: column; flex: 1;">
+            <input type="hidden" name="action" value="report_damage">
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight:600; font-size: 13px; color: #64748b; margin-bottom: 6px; display: block;">图书条码</label>
+                <input type="text" name="barcode" class="search-input" placeholder="请扫描图书条形码" required style="margin-bottom: 0;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight:600; font-size: 13px; color: #64748b; margin-bottom: 6px; display: block;">报损原因</label>
+                <input type="text" name="reason" class="search-input" placeholder="例如：缺页、水浸、丢失..." required style="margin-bottom: 0;">
+            </div>
+
+            <button type="submit" class="btn-glow" style="width:100%; margin-top: auto; background: linear-gradient(135deg, #ef4444, #b91c1c); justify-content: center;">
+                <i class="fas fa-ban"></i> 确认报损
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title" style="margin-bottom: 20px;"><i class="fas fa-tasks" style="color: #3b82f6; margin-right: 8px;"></i> 延期申请审批</div>
+    <table class="clean-table">
+        <thead>
+            <tr>
+                <th width="15%">申请人</th>
+                <th width="25%">图书</th>
+                <th width="10%">申请天数</th>
+                <th width="30%">理由</th>
+                <th width="20%">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for app in pending_apps %}
+            <tr>
+                <td>
+                    <div style="font-weight: 500;">{{ app['READER_NAME'] }}</div>
+                    <div style="font-size: 12px; color: #94a3b8;">ID: {{ app['READER_ID'] }}</div>
+                </td>
+                <td>{{ app['BOOK_NAME'] }}</td>
+                <td><span style="font-weight:bold; color:#3b82f6; background:#eff6ff; padding:2px 8px; border-radius:4px;">+{{ app['APPLY_DAYS'] }} 天</span></td>
+                <td style="color:#666;">{{ app['REASON'] }}</td>
+                <td>
+                    <form method="POST" style="display: flex; gap: 8px;">
+                        <input type="hidden" name="action" value="review_extension">
+                        <input type="hidden" name="app_id" value="{{ app['APP_ID'] }}">
+                        <button type="submit" name="decision" value="approve" class="btn-glow" style="padding: 6px 12px; font-size: 12px; background: #10b981; box-shadow: none;">通过</button>
+                        <button type="submit" name="decision" value="reject" class="btn-glow" style="padding: 6px 12px; font-size: 12px; background: #ef4444; box-shadow: none;">拒绝</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="text-align:center; padding: 40px; color:#999;">暂无待审批的延期申请</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-title" style="color:#ef4444; margin-bottom: 20px;"><i class="fas fa-history" style="margin-right: 8px;"></i> 图书报损记录 / Damage Log</div>
+    <table class="clean-table">
+        <thead>
+            <tr><th>条码</th><th>书名</th><th>原因</th><th>经手人</th><th>时间</th></tr>
+        </thead>
+        <tbody>
+            {% for log in damage_logs %}
+            <tr>
+                <td style="font-family:monospace; color: #1e293b;">{{ log['BARCODE'] }}</td>
+                <td>{{ log['BOOK_NAME'] }}</td>
+                <td>{{ log['REASON'] }}</td>
+                <td><span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-size:12px;">{{ log['HANDLER'] }}</span></td>
+                <td style="color:#888; font-size:12px;">{{ log['LOG_DATE'] }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="text-align:center; padding: 30px; color:#999;">暂无报损记录</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

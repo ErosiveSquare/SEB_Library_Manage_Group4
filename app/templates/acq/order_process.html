@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block page_title %}订单处理 / Order Processing{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 局部样式覆盖，确保 Modal 完美 */
+    .ios-modal-header {
+        border-top-left-radius: 24px;
+        border-top-right-radius: 24px;
+    }
+
+    /* 融合式搜索栏 */
+    .search-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        background: #f2f2f7;
+        border-radius: 10px;
+        border: 1px solid rgba(0,0,0,0.05);
+        padding: 4px;
+    }
+    .search-input-wrapper:focus-within {
+        background: #fff;
+        border-color: #007aff;
+        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+    }
+    .search-input-wrapper input {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 8px 10px !important;
+        flex: 1;
+    }
+
+    /* 小巧的查找按钮 */
+    .btn-search-sm {
+        height: 30px;
+        padding: 0 14px;
+        background: #34c759; /* Green for discovery */
+        color: white;
+        border-radius: 7px;
+        border: none;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex; align-items: center; gap: 4px;
+        transition: opacity 0.2s;
+        margin-right: 2px;
+    }
+    .btn-search-sm:hover { opacity: 0.9; }
+
+    /* 结果列表 */
+    .dropdown-results {
+        position: absolute;
+        top: 105%; left: 0; right: 0;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(20px);
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        border: 1px solid rgba(0,0,0,0.05);
+        z-index: 2000;
+        max-height: 250px;
+        overflow-y: auto;
+        display: none;
+        padding: 6px;
+    }
+    .dd-item {
+        padding: 10px;
+        display: flex; gap: 10px;
+        align-items: center;
+        border-radius: 8px;
+        cursor: pointer;
+        border-bottom: 1px solid #f5f5f7;
+    }
+    .dd-item:last-child { border-bottom: none; }
+    .dd-item:hover { background: #f2f2f7; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header-row">
+        <div class="card-title">待处理读者荐购</div>
+        <button class="btn-glow" onclick="openManualOrderModal()" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+            <i class="fas fa-plus-circle"></i> 手工添加订单 (Manual Add)
+        </button>
+    </div>
+
+    <form method="POST">
+        <table class="clean-table">
+            <thead>
+                <tr>
+                    <th width="40">选</th>
+                    <th>书名</th>
+                    <th>ISBN</th>
+                    <th>申请人</th>
+                    <th width="100">采购数量</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in pending_list %}
+                <tr>
+                    <td><input type="checkbox" name="selected_ids" value="{{ item['ACQ_ID'] }}"></td>
+                    <td>{{ item['BOOK_NAME'] }}</td>
+                    <td>{{ item['ISBN'] }}</td>
+                    <td>{{ item['READER_NAME'] }}</td>
+                    <td>
+                        <input type="number" name="qty_{{ item['ACQ_ID'] }}" value="1" min="1"
+                               style="width:60px; padding:4px; border:1px solid #ccc; border-radius:4px;">
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="text-align:center;">暂无待处理的荐购</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if pending_list %}
+        <div style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end;">
+            <button type="submit" name="action" value="reject" class="btn-glow" style="background:#ef4444;">
+                <i class="fas fa-times"></i> 驳回申请
+            </button>
+            <button type="submit" name="action" value="create_order" class="btn-glow">
+                <i class="fas fa-check"></i> 生成采购订单
+            </button>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<div class="ios-modal-overlay" id="manualOrderModal">
+    <div class="ios-modal" style="overflow: visible;"> <div class="ios-modal-header">
+            <div class="ios-modal-title">手动订单 / ISBN Retrieval</div>
+            <div class="ios-modal-close" onclick="closeModal('manualOrderModal')"><i class="fas fa-times"></i></div>
+        </div>
+        <div class="ios-modal-body" style="overflow: visible; padding: 20px;">
+            <form method="POST" class="ios-form-group" style="padding:0;">
+                <input type="hidden" name="action" value="manual_add">
+
+                <div style="margin-bottom: 16px;">
+                    <label style="font-size:12px; color:#666; font-weight:600; margin-bottom: 6px; display:block;">图书名称 (必填)</label>
+                    <div class="search-input-wrapper">
+                        <input type="text" id="manual_book_name" name="book_name" required placeholder="输入书名..." autocomplete="off">
+                        <button type="button" onclick="searchBookByTitle()" class="btn-search-sm">
+                            <i class="fas fa-search"></i> 查找
+                        </button>
+
+                        <div id="searchResults" class="dropdown-results"></div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label style="font-size:12px; color:#666; font-weight:600; margin-bottom: 6px; display:block;">ISBN (自动获取)</label>
+                    <input type="text" id="manual_isbn" name="isbn" class="ios-input" placeholder="选择上方结果自动回填..." style="margin-bottom:0;">
+                </div>
+
+                <div style="display:flex; gap:12px; margin-bottom: 16px;">
+                    <div style="flex:1;">
+                        <label style="font-size:12px; color:#666; font-weight:600; margin-bottom: 6px; display:block;">作者</label>
+                        <input type="text" id="manual_author" name="author" class="ios-input" required style="margin-bottom:0;">
+                    </div>
+                    <div style="flex:1;">
+                        <label style="font-size:12px; color:#666; font-weight:600; margin-bottom: 6px; display:block;">出版社</label>
+                        <input type="text" id="manual_publisher" name="publisher" class="ios-input" style="margin-bottom:0;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <label style="font-size:12px; color:#666; font-weight:600; margin-bottom: 6px; display:block;">采购数量</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="number" name="quantity" class="ios-input" value="1" min="1" style="width: 80px; margin-bottom:0;">
+                        <span style="font-size:12px; color:#86868b;">本</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="ios-btn-primary" style="background: linear-gradient(135deg, #007aff, #0056b3);">
+                    <i class="fas fa-check-circle"></i> 创建采购单
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openManualOrderModal() { document.getElementById('manualOrderModal').classList.add('open'); }
+
+    // --- 书名反查 ISBN 逻辑 ---
+    async function searchBookByTitle() {
+        const query = document.getElementById('manual_book_name').value.trim();
+        const resultsBox = document.getElementById('searchResults');
+        const btn = document.querySelector('.btn-search-sm');
+
+        if (!query) { alert('请先输入书名'); return; }
+
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        resultsBox.style.display = 'block';
+        resultsBox.innerHTML = '<div style="padding:15px; text-align:center; color:#86868b; font-size:12px;">连接数据库中...</div>';
+
+        try {
+            const res = await fetch("{{ url_for('acq.search_online') }}", {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({query: query})
+            });
+            const data = await res.json();
+            btn.innerHTML = '<i class="fas fa-search"></i> 查找';
+
+            if (data.success && data.found) {
+                let html = '';
+                data.results.forEach(book => {
+                    const safeBook = JSON.stringify(book).replace(/"/g, '&quot;');
+                    html += `
+                    <div class="dd-item" onclick="selectBook(${safeBook})">
+                        <div style="width:30px; height:40px; background:#eee; border-radius:4px; flex-shrink:0; overflow:hidden;">
+                            ${book.cover ? `<img src="${book.cover}" style="width:100%; height:100%; object-fit:cover;">` : ''}
+                        </div>
+                        <div style="flex:1; overflow:hidden;">
+                            <div style="font-weight:600; font-size:13px; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${book.title}</div>
+                            <div style="font-size:11px; color:#888;">${book.author}</div>
+                        </div>
+                    </div>
+                    `;
+                });
+                resultsBox.innerHTML = html;
+            } else {
+                resultsBox.innerHTML = '<div style="padding:15px; text-align:center; color:#86868b; font-size:12px;">未找到记录</div>';
+                setTimeout(() => resultsBox.style.display = 'none', 2000);
+            }
+        } catch (e) {
+            btn.innerHTML = '查找';
+            resultsBox.innerHTML = '<div style="padding:15px; text-align:center; color:#ef4444; font-size:12px;">搜索错误</div>';
+        }
+    }
+
+    function selectBook(book) {
+        document.getElementById('manual_book_name').value = book.title;
+        document.getElementById('manual_isbn').value = book.isbn || '';
+        document.getElementById('manual_author').value = book.author || '';
+        document.getElementById('manual_publisher').value = book.publisher || '';
+        document.getElementById('searchResults').style.display = 'none';
+
+        // Flash effect
+        const inputs = document.querySelectorAll('#manual_isbn, #manual_author, #manual_publisher');
+        inputs.forEach(el => {
+            el.style.background = '#ecfdf5';
+            setTimeout(() => el.style.background = '', 500);
+        });
+    }
+
+    // 关闭下拉
+    document.addEventListener('click', function(e) {
+        const box = document.getElementById('searchResults');
+        const wrapper = document.querySelector('.search-input-wrapper');
+        if (box && box.style.display === 'block' && !wrapper.contains(e.target)) {
+            box.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

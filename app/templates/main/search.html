@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+{% block page_title %}图书馆藏探索 / Discovery{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* --- iOS 风格探索模式样式 --- */
+
+    /* 1. 搜索 Hero 区域 */
+    .search-hero {
+        padding: 60px 20px;
+        text-align: center;
+        margin-bottom: 30px;
+        position: relative;
+    }
+    .hero-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1d1d1f;
+        letter-spacing: -0.5px;
+        margin-bottom: 10px;
+    }
+    .hero-subtitle {
+        font-size: 15px;
+        color: #86868b;
+        margin-bottom: 30px;
+        font-weight: 400;
+    }
+
+    /* --- [核心修复] 搜索框容器 --- */
+    .ios-search-box {
+        width: 100%;
+        max-width: 720px;
+        height: 60px; /* 固定容器高度，确保整齐 */
+        margin: 0 auto;
+
+        /* 玻璃拟态背景 */
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+
+        border-radius: 30px; /*以此高度的一半为半径，全圆角 */
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 15px 35px -5px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.02);
+
+        /* 布局控制：绝对垂直居中 */
+        display: flex;
+        align-items: center;
+        padding: 4px 6px 4px 24px; /* 右侧留小一点给按钮，左侧大一点 */
+
+        transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s;
+    }
+
+    /* 聚焦时的容器效果 */
+    .ios-search-box:focus-within {
+        transform: scale(1.01);
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 20px 40px -10px rgba(0, 122, 255, 0.15), 0 0 0 2px rgba(0, 122, 255, 0.1);
+    }
+
+    .ios-search-icon {
+        font-size: 20px;
+        color: #86868b;
+        margin-right: 12px;
+        display: flex;
+        align-items: center;
+        opacity: 0.6;
+    }
+
+    /* --- [核心修复] 输入框重置样式 --- */
+    /* 必须使用 !important 覆盖 base.html 中的全局 input 样式 */
+    .ios-search-input {
+        flex: 1; /* 撑满剩余空间 */
+        height: 100% !important; /* 填满容器高度 */
+
+        /* 强制去除全局样式的影响 */
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        margin-bottom: 0 !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+
+        font-size: 17px;
+        color: #1d1d1f;
+        font-weight: 400;
+        outline: none;
+    }
+
+    .ios-search-input::placeholder {
+        color: #98989d;
+    }
+
+    /* 搜索按钮 */
+    .ios-search-btn {
+        height: 48px; /* 高度略小于容器 (60px - 2*padding) */
+        padding: 0 28px;
+
+        background: #007aff;
+        color: white;
+        border: none;
+        border-radius: 24px; /* 胶囊圆角 */
+
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-left: 8px; /* 与输入框的间距 */
+
+        box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        transition: all 0.2s ease;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .ios-search-btn:hover {
+        background: #0062cc;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(0, 122, 255, 0.4);
+    }
+
+    .ios-search-btn:active {
+        transform: translateY(1px);
+    }
+
+    /* 清除按钮 */
+    .clear-btn {
+        padding: 8px;
+        color: #86868b;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s;
+        opacity: 0.5;
+        border-radius: 50%;
+    }
+    .clear-btn:hover {
+        color: #1d1d1f;
+        background: rgba(0,0,0,0.05);
+        opacity: 1;
+    }
+
+    /* 2. Bento Grid 布局 */
+    .bento-grid {
+        display: grid;
+        grid-template-columns: 3fr 1fr; /* 左3右1 */
+        gap: 30px;
+        align-items: start;
+    }
+
+    /* 通用卡片样式 - iOS 卡片 */
+    .ios-card {
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(30px);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        border: 1px solid rgba(255,255,255,0.6);
+    }
+    .card-header-ios {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .ios-label {
+        font-size: 19px;
+        font-weight: 600;
+        color: #1d1d1f;
+        letter-spacing: -0.015em;
+    }
+
+    /* 3. 新书画廊 (Gallery) - Apple Books 风格 */
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 24px 16px;
+    }
+    .book-item {
+        position: relative;
+        cursor: pointer;
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.2s;
+    }
+    /* 封面容器 */
+    .book-cover-wrapper {
+        width: 100%;
+        aspect-ratio: 2 / 3;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+        position: relative;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s;
+        margin-bottom: 12px;
+    }
+    .book-item:hover .book-cover-wrapper {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 12px 20px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .book-cover-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .book-meta { padding: 0 4px; }
+    .book-title-text {
+        font-size: 13px; font-weight: 600; color: #1d1d1f; margin-bottom: 4px;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;
+    }
+    .book-author-text {
+        font-size: 11px; color: #86868b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* 4. 分类列表 (List) - iOS Settings 风格 */
+    .stat-list { display: flex; flex-direction: column; }
+    .stat-row {
+        display: flex; align-items: center; padding: 12px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05); transition: background 0.2s;
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-row:hover {
+        background: #f5f5f7; border-radius: 8px; cursor: pointer; padding-left: 10px; padding-right: 10px;
+    }
+    .stat-circle {
+        width: 36px; height: 36px; border-radius: 50%; background: #f5f5f7; color: #1d1d1f;
+        display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; margin-right: 12px;
+    }
+    .stat-info { flex: 1; }
+    .stat-name { font-size: 14px; font-weight: 500; color: #1d1d1f; }
+    .stat-count { font-size: 13px; color: #86868b; }
+
+    /* 5. 空状态 */
+    .empty-search { text-align: center; padding: 80px 0; color: #86868b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-hero">
+    <div class="hero-title">发现一本好书</div>
+    <div class="hero-subtitle">探索馆藏资源 · Find your next reading</div>
+
+    <form method="GET" action="{{ url_for('main.search') }}" class="ios-search-box">
+        <div class="ios-search-icon"><i class="fas fa-search"></i></div>
+
+        <input type="text" name="q" class="ios-search-input" placeholder="搜索书名、ISBN、作者..." value="{{ query }}">
+
+        {% if query or clc_filter %}
+        <a href="{{ url_for('main.search') }}" class="clear-btn" title="清除搜索条件">
+            <i class="fas fa-times-circle" style="font-size: 18px;"></i>
+        </a>
+        {% endif %}
+
+        <button type="submit" class="ios-search-btn">
+            <span>搜索</span>
+            <i class="fas fa-arrow-right" style="font-size: 12px;"></i>
+        </button>
+    </form>
+</div>
+
+{% if query or clc_filter %}
+    <div class="ios-card">
+        <div class="card-header-ios">
+            <div class="ios-label">
+                {% if clc_filter %}Category: {{ clc_filter }} - {{ CLC_DATA.get(clc_filter, '未知分类') }}{% else %}Search Results{% endif %}
+            </div>
+            <div style="font-size:13px; color:#86868b;">共找到 {{ books|length }} 条结果</div>
+        </div>
+
+        <table class="clean-table">
+            <thead>
+                <tr>
+                    <th>ISBN</th>
+                    <th>图书信息</th>
+                    <th>索书号</th>
+                    <th>出版社</th>
+                    <th>在馆</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}
+                <tr>
+                    <td style="font-family: monospace; color: #86868b;">{{ book['ISBN'] }}</td>
+                    <td>
+                        <div style="font-weight: 600; color: #1d1d1f;">{{ book['BOOK_NAME'] }}</div>
+                        <div style="font-size: 12px; color: #86868b;">{{ book['AUTHOR'] }}</div>
+                    </td>
+                    <td><span style="background: #f5f5f7; padding: 4px 8px; border-radius: 6px; font-size: 12px; color: #1d1d1f; font-weight:500;">{{ book['CALL_NUMBER'] }}</span></td>
+                    <td>{{ book['PUBLISHER'] }}</td>
+                    <td>
+                        {% if book['available_count'] > 0 %}
+                            <span style="color: #34c759; font-weight: 600;">Available</span>
+                        {% else %}
+                            <span style="color: #ff3b30;">Out</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('main.book_detail', isbn=book['ISBN']) }}" class="btn-glow"
+                           style="padding: 6px 14px; font-size: 12px; background: #007aff; box-shadow: 0 2px 8px rgba(0,122,255,0.25); text-decoration: none;">
+                            查看
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="empty-search">
+                    <i class="fas fa-search" style="font-size: 32px; margin-bottom: 10px; opacity: 0.3;"></i><br>
+                    未找到相关图书
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% else %}
+    <div class="bento-grid">
+        <div class="ios-card">
+            <div class="card-header-ios">
+                <div class="ios-label">New Arrivals <span style="font-weight:400; color:#86868b; font-size:16px; margin-left:8px;">最新入库</span></div>
+            </div>
+            <div class="gallery-grid">
+                {% for book in discovery.latest %}
+                <a href="{{ url_for('main.book_detail', isbn=book['ISBN']) }}" class="book-item">
+                    <div class="book-cover-wrapper">
+                        <img src="{{ url_for('static', filename='asset/covers/' + book['cover_image']) }}" alt="{{ book['BOOK_NAME'] }}" class="book-cover-img">
+                    </div>
+                    <div class="book-meta">
+                        <div class="book-title-text">{{ book['BOOK_NAME'] }}</div>
+                        <div class="book-author-text">{{ book['AUTHOR'] }}</div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="ios-card">
+            <div class="card-header-ios">
+                <div class="ios-label">分类 / Category</div>
+            </div>
+            <div class="stat-list">
+                {% for stat in discovery.stats %}
+                <div class="stat-row" onclick="window.location.href='{{ url_for('main.search', clc=stat.code) }}'">
+                    <div class="stat-circle">{{ stat.code }}</div>
+                    <div class="stat-info">
+                        <div class="stat-name">{{ stat.name }}</div>
+                        <div class="stat-count">{{ stat.count }} 册</div>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color:#d1d1d6; font-size: 12px;"></i>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}
